@@ -49,7 +49,7 @@ const config: Config = {
           surface: "#F9FAFB",
           text: "#1E293B",
           muted: "#64748B",
-          primary: "#3B82F6",
+          primary: "#10B981", // Green color for light mode
           accent: "#34D399",
           border: "#E5E7EB",
         },
@@ -59,8 +59,8 @@ const config: Config = {
           surface: "#1E293B",
           text: "#F8FAFC",
           muted: "#94A3B8",
-          primary: "#3B82F6",
-          accent: "#34D399",
+          primary: "#3B82F6", // Blue color for dark mode
+          accent: "#60A5FA",
           border: "#334155",
         },
         // Semantic color mappings for both modes
