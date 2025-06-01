@@ -277,6 +277,12 @@ Naija Jollof Website (naijajollofw.ca)
       setIsParsing(true)
       try {
         const details = await parseLinkedInJob(jobUrl)
+
+        // Validate the response
+        if (!details) {
+          throw new Error("No response received from job parser")
+        }
+
         setJobDetails(details)
 
         if (!details.success) {
@@ -295,17 +301,22 @@ Naija Jollof Website (naijajollofw.ca)
         }
       } catch (error) {
         console.error("Error parsing job:", error)
-        setJobDetails({
+
+        // Create a fallback error response
+        const errorDetails: JobDetails = {
           jobTitle: "",
           companyName: "",
           location: "",
           description: "",
           success: false,
-          error: "An unexpected error occurred while parsing the job details.",
-        })
+          error: error instanceof Error ? error.message : "An unexpected error occurred while parsing the job details.",
+        }
+
+        setJobDetails(errorDetails)
+
         toast({
           title: "Error extracting job details",
-          description: "An unexpected error occurred. Please try manual input.",
+          description: "An unexpected error occurred. Please try manual input instead.",
           variant: "destructive",
         })
       } finally {

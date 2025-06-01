@@ -18,7 +18,14 @@ async function extractJobDetailsWithGPT(html: string, url: string): Promise<JobD
   try {
     // Check if API key is available
     if (!process.env.OPENAI_API_KEY) {
-      throw new Error("OpenAI API key is not configured. Please add OPENAI_API_KEY to your environment variables.")
+      return {
+        jobTitle: "Unknown Job Title",
+        companyName: "Unknown Company",
+        location: "Unknown Location",
+        description: "OpenAI API key not configured",
+        success: false,
+        error: "OpenAI API key is not configured. Please add OPENAI_API_KEY to your environment variables.",
+      }
     }
 
     // Clean the HTML and extract text content
@@ -59,15 +66,28 @@ Return only this JSON format:
       maxTokens: 1000,
     })
 
-    // Parse the JSON response
-    const cleanedText = text.trim()
-    const jsonMatch = cleanedText.match(/\{[\s\S]*\}/)
+    // Parse the JSON response with better error handling
+    let extractedData
+    try {
+      const cleanedText = text.trim()
+      const jsonMatch = cleanedText.match(/\{[\s\S]*\}/)
 
-    if (!jsonMatch) {
-      throw new Error("No valid JSON found in GPT response")
+      if (!jsonMatch) {
+        throw new Error("No valid JSON found in GPT response")
+      }
+
+      extractedData = JSON.parse(jsonMatch[0])
+    } catch (parseError) {
+      console.error("JSON parsing error:", parseError)
+      return {
+        jobTitle: "Unknown Job Title",
+        companyName: "Unknown Company",
+        location: "Unknown Location",
+        description: "Could not parse job details from response",
+        success: false,
+        error: "Failed to parse job details from AI response",
+      }
     }
-
-    const extractedData = JSON.parse(jsonMatch[0])
 
     return {
       jobTitle: extractedData.jobTitle || "Unknown Job Title",
@@ -84,9 +104,14 @@ Return only this JSON format:
 
 export async function parseLinkedInJob(url: string): Promise<JobDetails> {
   try {
+    // Input validation
+    if (!url || typeof url !== "string") {
+      throw new Error("Invalid URL provided")
+    }
+
     // Validate URL format
     if (!url.startsWith("https://www.linkedin.com/jobs/view/")) {
-      throw new Error("Invalid LinkedIn job URL")
+      throw new Error("Invalid LinkedIn job URL format")
     }
 
     // Attempt to fetch the LinkedIn job post

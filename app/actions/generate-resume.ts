@@ -2,7 +2,7 @@
 
 import { generateText } from "ai"
 import { openai } from "@ai-sdk/openai"
-import { generateResumePrompt, RESUME_TEMPLATE } from "@/lib/resume-template"
+import { generateResumePrompt } from "@/lib/resume-template"
 import { ActionVerbEnforcer } from "@/lib/action-verb-enforcer"
 import { ExperienceAnalyzer } from "@/lib/experience-analyzer"
 import BulletQualityEnhancer from "@/lib/bullet-quality-enhancer"
@@ -265,6 +265,3 @@ export async function generateResume(
     }
   }
 }
-
-// Export the template for reference
-export { RESUME_TEMPLATE }
