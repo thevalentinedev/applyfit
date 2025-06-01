@@ -204,17 +204,21 @@ export function ResumeFullPreview({
           </CardTitle>
         </CardHeader>
         <CardContent className="p-1">
-          <div className="bg-white border border-gray-200 rounded-lg max-h-[800px] overflow-y-auto">
+          <div className="bg-white border border-gray-200 rounded-lg max-h-[800px] overflow-y-auto flex justify-center">
             {/* Resume Content */}
             <div
               ref={resumeRef}
-              className="bg-white p-8 w-full max-w-[8.5in] mx-auto font-sans"
+              className="bg-white p-8 mx-auto font-sans"
               style={{
+                width: "8.5in",
                 minHeight: "11in",
                 fontFamily: "Arial, sans-serif",
                 fontSize: "11pt",
                 lineHeight: "1.15",
-                margin: "0.75in",
+                boxSizing: "border-box",
+                margin: "0 auto",
+                border: "1px solid #e5e7eb",
+                boxShadow: "0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)",
               }}
             >
               {/* Header */}
