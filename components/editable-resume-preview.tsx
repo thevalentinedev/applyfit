@@ -9,7 +9,7 @@ import { EditableCoverLetterPreview } from "./editable-cover-letter-preview"
 import { ResumeFullPreview } from "./resume-full-preview"
 import { generateCoverLetter } from "@/app/actions/generate-cover-letter"
 import { useToast } from "@/hooks/use-toast"
-import { Loader2, Save, ArrowLeft, FileText, Mail, Eye } from "lucide-react"
+import { Loader2, Save, ArrowLeft, FileText, Mail, Eye, RotateCcw } from "lucide-react"
 import { EditableSection } from "./editable-section"
 import { analyzeTone, type ToneType } from "@/lib/tone-analyzer"
 import { CacheManager } from "@/lib/cache-manager"
@@ -32,6 +32,7 @@ interface EditableResumePreviewProps {
   onResumeUpdate: (updatedResume: GeneratedResume) => void
   onBack?: () => void
   showFullPreview?: boolean
+  onStartOver?: () => void
 }
 
 export function EditableResumePreview({
@@ -45,6 +46,7 @@ export function EditableResumePreview({
   onResumeUpdate,
   onBack,
   showFullPreview = false,
+  onStartOver,
 }: EditableResumePreviewProps) {
   const { toast } = useToast()
   const [currentResume, setCurrentResume] = useState(resume)
@@ -228,6 +230,7 @@ export function EditableResumePreview({
         selectedTone={selectedTone}
         onToneChange={setSelectedTone}
         sectionContext={sectionContext}
+        onStartOver={onStartOver}
       />
     )
   }
@@ -259,6 +262,7 @@ export function EditableResumePreview({
         onBack={() => setShowFullResumePreview(false)}
         onGenerateCoverLetter={handleGenerateCoverLetter}
         isGeneratingCoverLetter={isGeneratingCoverLetter}
+        onStartOver={onStartOver}
       />
     )
   }
@@ -274,10 +278,16 @@ export function EditableResumePreview({
               Back
             </Button>
           )}
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900">Resume Generated</h2>
-            <p className="text-gray-600">Review and customize your tailored resume</p>
-          </div>
+          {onStartOver && (
+            <Button
+              variant="outline"
+              onClick={onStartOver}
+              className="flex items-center gap-2 text-red-600 border-red-300 hover:bg-red-50"
+            >
+              <RotateCcw className="h-4 w-4" />
+              Start Over
+            </Button>
+          )}
         </div>
 
         {lastSaved && (

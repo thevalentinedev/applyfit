@@ -3,12 +3,12 @@
 import { useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { ArrowLeft, Download, Loader2, Mail, FileText, ChevronDown } from "lucide-react"
+import { ArrowLeft, Download, Loader2, Mail, FileText, ChevronDown, RotateCcw } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import type { GeneratedResume } from "@/app/actions/generate-resume"
 import type { UserProfile } from "@/app/actions/generate-resume"
 import type { JobDetails } from "@/app/actions/parse-job"
-import { exportResumeToDocx } from "@/lib/docx-export"
+import { exportResumeToDocx, exportResumeToPDF } from "@/lib/docx-export"
 import { useToast } from "@/hooks/use-toast"
 
 interface ResumeFullPreviewProps {
@@ -18,6 +18,7 @@ interface ResumeFullPreviewProps {
   onBack: () => void
   onGenerateCoverLetter?: () => void
   isGeneratingCoverLetter?: boolean
+  onStartOver?: () => void
 }
 
 export function ResumeFullPreview({
@@ -27,6 +28,7 @@ export function ResumeFullPreview({
   onBack,
   onGenerateCoverLetter,
   isGeneratingCoverLetter = false,
+  onStartOver,
 }: ResumeFullPreviewProps) {
   const { toast } = useToast()
   const resumeRef = useRef<HTMLDivElement>(null)
@@ -54,63 +56,9 @@ export function ResumeFullPreview({
   }
 
   const handleDownloadPDF = async () => {
-    if (!resumeRef.current) return
     setIsExporting(true)
-
     try {
-      toast({
-        title: "Generating PDF",
-        description: "Preparing your resume for download...",
-      })
-
-      const html2pdfModule = await import("html2pdf.js")
-      const html2pdf = html2pdfModule.default || html2pdfModule
-
-      if (typeof html2pdf !== "function") {
-        throw new Error("html2pdf library failed to load properly")
-      }
-
-      const opt = {
-        margin: [0.5, 0.5, 0.5, 0.5],
-        filename: `${userProfile.name.replace(/\s+/g, "_")}_Resume.pdf`,
-        image: { type: "jpeg", quality: 0.98 },
-        html2canvas: {
-          scale: 2,
-          useCORS: true,
-          logging: false,
-          allowTaint: true,
-          backgroundColor: "#ffffff",
-        },
-        jsPDF: {
-          unit: "in",
-          format: "letter",
-          orientation: "portrait",
-        },
-        pagebreak: {
-          mode: ["avoid-all", "css", "legacy"],
-        },
-      }
-
-      const clonedElement = resumeRef.current.cloneNode(true) as HTMLElement
-      clonedElement.style.width = "8.5in"
-      clonedElement.style.padding = "0.5in"
-      clonedElement.style.backgroundColor = "white"
-      clonedElement.style.color = "black"
-      clonedElement.style.fontFamily = "Arial, sans-serif"
-      clonedElement.style.fontSize = "12px"
-      clonedElement.style.lineHeight = "1.4"
-
-      const interactiveElements = clonedElement.querySelectorAll("button, .hover\\:underline")
-      interactiveElements.forEach((el) => {
-        if (el instanceof HTMLElement) {
-          el.style.textDecoration = "none"
-          el.style.color = "inherit"
-        }
-      })
-
-      const worker = html2pdf().set(opt).from(clonedElement)
-      await worker.save()
-
+      await exportResumeToPDF(resume)
       toast({
         title: "Resume downloaded",
         description: "Your resume has been downloaded as a PDF file.",
@@ -118,20 +66,9 @@ export function ResumeFullPreview({
       })
     } catch (error) {
       console.error("Error generating PDF:", error)
-
-      let errorMessage = "Failed to generate PDF file. Please try again."
-
-      if (error instanceof Error) {
-        if (error.message.includes("html2pdf")) {
-          errorMessage = "PDF library failed to load. Please refresh the page and try again."
-        } else if (error.message.includes("network")) {
-          errorMessage = "Network error. Please check your connection and try again."
-        }
-      }
-
       toast({
         title: "Download failed",
-        description: errorMessage,
+        description: "Failed to generate PDF file. Please try again.",
         variant: "destructive",
       })
     } finally {
@@ -153,6 +90,16 @@ export function ResumeFullPreview({
           <Button variant="outline" onClick={onBack} className="flex items-center gap-2">
             <ArrowLeft className="h-4 w-4" /> Back
           </Button>
+          {onStartOver && (
+            <Button
+              variant="outline"
+              onClick={onStartOver}
+              className="flex items-center gap-2 text-red-600 border-red-300 hover:bg-red-50"
+            >
+              <RotateCcw className="h-4 w-4" />
+              Start Over
+            </Button>
+          )}
           {onGenerateCoverLetter && (
             <Button
               onClick={onGenerateCoverLetter}

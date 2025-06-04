@@ -67,7 +67,7 @@ Naija Jollof (Feb 2024 - May 2025) - Remote
 • Built responsive web application for Nigerian food delivery service
 • Focused on SEO optimization and accessibility improvements
 • Enhanced user experience through modern UI/UX design principles`,
-    projects: `ImageMark (Ongoing) - Creator & Developer
+    projects: `ImageMark - Creator & Developer
 • Developed watermarking application with 10k+ operations processed
 • Implemented smart positioning algorithms using Canvas API
 • Built with React, TypeScript, and modern web technologies
@@ -414,6 +414,34 @@ Naija Jollof Website (naijajollofw.ca)
     setShowProfilePreview(false)
   }
 
+  const handleStartOver = () => {
+    // Clear all state
+    setJobUrl("")
+    setManualJobDescription("")
+    setShowManualInput(false)
+    setValidationResult(null)
+    setJobDetails(null)
+    setJobAnalyzed(false)
+    setGeneratedResume(null)
+    setCurrentStep("input")
+    setDuplicateCheck(null)
+
+    // Clear current session
+    if (currentSessionId) {
+      CacheManager.deleteSession(currentSessionId)
+      setCurrentSessionId(null)
+    }
+
+    // Clear drafts
+    DraftManager.clearAllDrafts()
+
+    toast({
+      title: "Session cleared",
+      description: "Starting fresh with a new job application.",
+      variant: "success",
+    })
+  }
+
   // Render different content based on the current step
   if (currentStep === "generating") {
     return (
@@ -447,6 +475,7 @@ Naija Jollof Website (naijajollofw.ca)
         }}
         onResumeUpdate={handleResumeUpdate}
         onBack={handleBackToInput}
+        onStartOver={handleStartOver}
         showFullPreview={true}
       />
     )
