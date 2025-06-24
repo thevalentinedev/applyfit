@@ -4,6 +4,12 @@ import pdfFonts from "pdfmake/build/vfs_fonts"
 pdfMake.vfs = pdfFonts.pdfMake.vfs
 
 export function generatePDF(resumeContent: string, userProfile: any) {
+  // Helper to create a link object if value exists
+  const makeLink = (label: string, url: string | undefined) =>
+    url
+      ? { text: label, link: url, color: "#1976d2", decoration: "underline", margin: [0, 0.5, 0, 0.5] }
+      : undefined
+
   // Define document content
   const documentDefinition = {
     content: [
@@ -14,22 +20,26 @@ export function generatePDF(resumeContent: string, userProfile: any) {
             stack: [
               { text: userProfile?.full_name || "Your Name", style: "name" },
               {
-                text: [
-                  userProfile?.email || "your.email@example.com",
-                  " | ",
-                  userProfile?.phone || "Your Phone",
-                  " | ",
-                  userProfile?.website || "Your Website",
-                ].join(""),
-                style: "contact",
+                // Contact info: email, phone, website (website as hyperlink, just the word 'Website')
+                margin: [0, 0, 0, 2],
+                fontSize: 10,
+                columns: [
+                  { text: userProfile?.email || "your.email@example.com" },
+                  { text: "|", margin: [4, 0, 4, 0] },
+                  { text: userProfile?.phone || "Your Phone" },
+                  { text: "|", margin: [4, 0, 4, 0] },
+                  makeLink("Website", userProfile?.website),
+                ].filter(Boolean),
               },
               {
-                text: [
-                  userProfile?.linkedin_url || "LinkedIn Profile",
-                  " | ",
-                  userProfile?.github_url || "GitHub Profile",
-                ].join(""),
-                style: "contact",
+                // Social links: LinkedIn and GitHub as hyperlinks, just the words
+                margin: [0, 0, 0, 2],
+                fontSize: 10,
+                columns: [
+                  makeLink("LinkedIn", userProfile?.linkedin_url),
+                  { text: "|", margin: [4, 0, 4, 0] },
+                  makeLink("GitHub", userProfile?.github_url),
+                ].filter(Boolean),
               },
             ],
           },
@@ -58,14 +68,14 @@ export function generatePDF(resumeContent: string, userProfile: any) {
 
       // Dynamic education section
       { text: "EDUCATION", style: "sectionHeader" },
-      ...(userProfile?.education || []).map((edu) => ({
+      ...(userProfile?.education || []).map((edu: any) => ({
         text: `${edu.degree} in ${edu.field_of_study}\n${edu.institution} | ${edu.graduation_year}`,
         style: "educationItem",
       })),
 
       // Dynamic experience section
       { text: "EXPERIENCE", style: "sectionHeader" },
-      ...(userProfile?.professional_experience || []).map((exp) => ({
+      ...(userProfile?.professional_experience || []).map((exp: any) => ({
         text: `${exp.job_title}\n${exp.company} | ${exp.start_date} - ${exp.end_date || "Present"}\n${exp.description}`,
         style: "experienceItem",
       })),
