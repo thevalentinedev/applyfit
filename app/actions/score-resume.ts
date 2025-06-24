@@ -2,7 +2,7 @@
 
 import { generateText } from "ai"
 import { openai } from "@ai-sdk/openai"
-import { formatResumeForScoring } from "../../lib/formatResumeForScoring";
+import { formatResumeForScoring } from "@/lib/formatResumeForScoring"
 
 export interface ATSScoreResult {
   score: number
@@ -181,9 +181,6 @@ Return ONLY valid JSON:
     }
   }
 }
-
-// Helper function to format resume content for scoring
-
 
 // Server Action wrapper for the component
 export async function scoreResumeAction(resume: any, jobDescription: string, useGpt4 = true): Promise<ATSScoreResult> {

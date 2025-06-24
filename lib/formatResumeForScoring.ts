@@ -1,3 +1,4 @@
+// Helper function to format resume content for scoring
 export function formatResumeForScoring(resume: any): string {
   if (typeof resume === "string") {
     return resume
