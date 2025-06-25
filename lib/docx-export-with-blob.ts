@@ -62,11 +62,30 @@ interface GeneratedCoverLetter {
 // Helper function to format phone number
 const formatPhoneNumber = (phone: string) => {
   if (!phone) return ""
-  const digits = phone.replace(/\D/g, "")
-  if (digits.length === 10) {
-    return `${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6)}`
+  // Remove all non-digit characters
+  const cleaned = phone.replace(/\D/g, "")
+  // Format as (XXX) XXX-XXXX
+  if (cleaned.length === 10) {
+    return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6)}`
   }
+  // Return as is if not 10 digits
   return phone
+}
+
+// Helper function to extract domain from website URL
+const getWebsiteDomain = (website: string): string => {
+  if (!website) return "Website"
+  
+  try {
+    // Add protocol if missing
+    const url = website.startsWith("http") ? website : `https://${website}`
+    const domain = new URL(url).hostname.replace("www.", "")
+    return domain
+  } catch {
+    // If URL parsing fails, try to extract domain manually
+    const cleanUrl = website.replace(/^https?:\/\//, "").replace(/^www\./, "")
+    return cleanUrl || "Website"
+  }
 }
 
 // Helper function to format URL
@@ -155,7 +174,7 @@ export async function exportResumeToDocx(
         new Paragraph({
           children: [
             new ExternalHyperlink({
-              children: [new TextRun({ text: "makeitnow", style: "Hyperlink", size: 22 })],
+              children: [new TextRun({ text: getWebsiteDomain(resume.candidateWebsite), style: "Hyperlink", size: 22 })],
               link: websiteUrl,
             }),
           ],
@@ -647,7 +666,7 @@ export async function exportCoverLetterToDocx(
         new Paragraph({
           children: [
             new ExternalHyperlink({
-              children: [new TextRun({ text: "makeitnow", style: "Hyperlink", size: 22 })],
+              children: [new TextRun({ text: getWebsiteDomain(coverLetter.candidateWebsite), style: "Hyperlink", size: 22 })],
               link: websiteUrl,
             }),
           ],
@@ -883,7 +902,7 @@ export async function exportCoverLetterToPDF(
     }
 
     if (coverLetter.candidateWebsite) {
-      addText(formatUrl(coverLetter.candidateWebsite), 11, false, 3)
+      addText(getWebsiteDomain(coverLetter.candidateWebsite), 11, false, 3)
     }
 
     if (coverLetter.location) {

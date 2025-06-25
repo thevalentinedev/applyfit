@@ -96,6 +96,22 @@ function formatDate(dateString: string): string {
   }
 }
 
+// Helper function to extract domain from website URL
+const getWebsiteDomain = (website: string): string => {
+  if (!website) return "Website"
+  
+  try {
+    // Add protocol if missing
+    const url = website.startsWith("http") ? website : `https://${website}`
+    const domain = new URL(url).hostname.replace("www.", "")
+    return domain
+  } catch {
+    // If URL parsing fails, try to extract domain manually
+    const cleanUrl = website.replace(/^https?:\/\//, "").replace(/^www\./, "")
+    return cleanUrl || "Website"
+  }
+}
+
 export function UserProfilePreview({ profile }: UserProfilePreviewProps) {
   const education = profile.education || []
   const experience = profile.professional_experience || []
@@ -157,7 +173,7 @@ export function UserProfilePreview({ profile }: UserProfilePreviewProps) {
                           rel="noopener noreferrer"
                           className="text-blue-600 hover:underline flex items-center gap-1"
                         >
-                          makeitnow <ExternalLink className="h-3 w-3" />
+                          {getWebsiteDomain(profile.website)} <ExternalLink className="h-3 w-3" />
                         </a>
                       </div>
                     )}

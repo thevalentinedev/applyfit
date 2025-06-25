@@ -15,13 +15,30 @@ import { uploadResumeToBlob, uploadCoverLetterToBlob } from "@/lib/client-blob-s
 // Helper function to format phone number
 const formatPhoneNumber = (phone: string) => {
   if (!phone) return ""
-  // Remove all non-digits
-  const digits = phone.replace(/\D/g, "")
-  // Format as XXX XXX XXXX
-  if (digits.length === 10) {
-    return `${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6)}`
+  // Remove all non-digit characters
+  const cleaned = phone.replace(/\D/g, "")
+  // Format as (XXX) XXX-XXXX
+  if (cleaned.length === 10) {
+    return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6)}`
   }
-  return phone // Return original if not 10 digits
+  // Return as is if not 10 digits
+  return phone
+}
+
+// Helper function to extract domain from website URL
+const getWebsiteDomain = (website: string): string => {
+  if (!website) return "Website"
+  
+  try {
+    // Add protocol if missing
+    const url = website.startsWith("http") ? website : `https://${website}`
+    const domain = new URL(url).hostname.replace("www.", "")
+    return domain
+  } catch {
+    // If URL parsing fails, try to extract domain manually
+    const cleanUrl = website.replace(/^https?:\/\//, "").replace(/^www\./, "")
+    return cleanUrl || "Website"
+  }
 }
 
 // PDF Export Functions using jsPDF
@@ -146,7 +163,7 @@ export async function exportResumeToPDF(resume: GeneratedResume): Promise<void> 
         : `https://${resume.website}`
 
       // Center the website link
-      const websiteText = "makeitnow"
+      const websiteText = getWebsiteDomain(resume.website)
       const websiteWidth = doc.getTextWidth(websiteText)
       const websiteX = (pageWidth - websiteWidth) / 2
       addHyperlink(websiteText, websiteUrl, websiteX, yPosition)
@@ -467,7 +484,7 @@ export async function exportCoverLetterToPDF(coverLetter: GeneratedCoverLetter):
       const websiteUrl = coverLetter.website.startsWith("http")
         ? coverLetter.website
         : `https://${coverLetter.website}`
-      addHyperlink("makeitnow", websiteUrl, margin, yPosition)
+      addHyperlink(getWebsiteDomain(coverLetter.website), websiteUrl, margin, yPosition)
       yPosition += 15
     }
 
@@ -672,7 +689,7 @@ export async function exportResumeToDocx(resume: GeneratedResume): Promise<void>
                     new ExternalHyperlink({
                       children: [
                         new TextRun({
-                          text: "Website",
+                          text: getWebsiteDomain(resume.website),
                           style: "Hyperlink",
                           size: 20, // 10pt
                           font: "Calibri",
@@ -1238,7 +1255,7 @@ export function generateDocx(resumeContent: string, userProfile: any) {
       style: "contact",
     },
     website: {
-      text: userProfile?.website || "Your Website",
+      text: userProfile?.website ? getWebsiteDomain(userProfile.website) : "Website",
       style: "contact",
     },
     linkedin: {

@@ -52,6 +52,22 @@ const formatUrl = (url: string) => {
   return `https://${url}`
 }
 
+// Helper function to extract domain from website URL
+const getWebsiteDomain = (website: string): string => {
+  if (!website) return "Website"
+  
+  try {
+    // Add protocol if missing
+    const url = website.startsWith("http") ? website : `https://${website}`
+    const domain = new URL(url).hostname.replace("www.", "")
+    return domain
+  } catch {
+    // If URL parsing fails, try to extract domain manually
+    const cleanUrl = website.replace(/^https?:\/\//, "").replace(/^www\./, "")
+    return cleanUrl || "Website"
+  }
+}
+
 // Helper function to format phone number
 const formatPhoneNumber = (phone: string) => {
   if (!phone) return ""
@@ -389,7 +405,7 @@ export function ResumeFullPreview({
                       className="text-blue-600 hover:underline"
                       style={{ fontSize: "11pt", fontFamily: "Arial, sans-serif", lineHeight: "1.15" }}
                     >
-                      makeitnow
+                      {getWebsiteDomain(userWebsite)}
                     </a>
                   </div>
                 )}
