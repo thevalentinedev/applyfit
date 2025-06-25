@@ -52,13 +52,13 @@ export default function SupportPage() {
           <h1 className="text-3xl font-heading font-bold">Contact Us</h1>
           <p className="text-muted-foreground mt-2">All support, privacy, and legal inquiries must be submitted via this form.</p>
         </div>
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
               <Mail className="mr-2 h-5 w-5" />
               Contact Form
-            </CardTitle>
-          </CardHeader>
+              </CardTitle>
+            </CardHeader>
           <CardContent>
             {success && <Alert className="mb-4">Message sent! We'll get back to you soon.</Alert>}
             {error && <Alert className="mb-4" variant="destructive">{error}</Alert>}
@@ -95,8 +95,8 @@ export default function SupportPage() {
               </Button>
             </form>
             <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer />
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
         <div className="text-center">
           <Button asChild variant="outline">
             <Link href="/auth/login">

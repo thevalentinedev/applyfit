@@ -37,9 +37,6 @@ interface Project {
   title: string
   description: string
   technologies: string[]
-  start_date: string
-  end_date: string
-  is_ongoing?: boolean
   url?: string
   github_url?: string
 }
@@ -156,9 +153,8 @@ export function UserProfileForm({ profile, onSuccess }: UserProfileFormProps) {
       title: "",
       description: "",
       technologies: [],
-      start_date: "",
-      end_date: "",
-      is_ongoing: false,
+      url: "",
+      github_url: "",
     }
     setProjects([...projects, newProject])
   }
@@ -296,72 +292,72 @@ export function UserProfileForm({ profile, onSuccess }: UserProfileFormProps) {
               <div key={edu.id} className="p-4 border rounded-lg space-y-2 bg-muted/10">
                 {editingEducationId === edu.id ? (
                   <div>
-                    <div className="space-y-2">
-                      <Label>Institution *</Label>
-                      <Input
-                        value={edu.institution}
-                        onChange={(e) => updateEducation(edu.id, "institution", e.target.value)}
-                        placeholder="University/School name"
-                        disabled={isLoading}
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Degree *</Label>
-                      <Input
-                        value={edu.degree}
-                        onChange={(e) => updateEducation(edu.id, "degree", e.target.value)}
-                        placeholder="Bachelor's, Master's, etc."
-                        disabled={isLoading}
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Field of Study</Label>
-                      <Input
-                        value={edu.field_of_study}
-                        onChange={(e) => updateEducation(edu.id, "field_of_study", e.target.value)}
-                        placeholder="Computer Science, etc."
-                        disabled={isLoading}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Start Date</Label>
-                      <Input
-                        type="month"
-                        value={edu.start_date}
-                        onChange={(e) => updateEducation(edu.id, "start_date", e.target.value)}
-                        disabled={isLoading}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>End Date</Label>
-                      <Input
-                        type="month"
-                        value={edu.end_date}
-                        onChange={(e) => updateEducation(edu.id, "end_date", e.target.value)}
-                        disabled={isLoading}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>GPA (Optional)</Label>
-                      <Input
-                        value={edu.gpa || ""}
-                        onChange={(e) => updateEducation(edu.id, "gpa", e.target.value)}
-                        placeholder="3.8/4.0"
-                        disabled={isLoading}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Description (Optional)</Label>
-                      <Textarea
-                        value={edu.description || ""}
-                        onChange={(e) => updateEducation(edu.id, "description", e.target.value)}
-                        placeholder="Relevant coursework, achievements, etc."
-                        rows={2}
-                        disabled={isLoading}
-                      />
-                    </div>
+                  <div className="space-y-2">
+                    <Label>Institution *</Label>
+                    <Input
+                      value={edu.institution}
+                      onChange={(e) => updateEducation(edu.id, "institution", e.target.value)}
+                      placeholder="University/School name"
+                      disabled={isLoading}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Degree *</Label>
+                    <Input
+                      value={edu.degree}
+                      onChange={(e) => updateEducation(edu.id, "degree", e.target.value)}
+                      placeholder="Bachelor's, Master's, etc."
+                      disabled={isLoading}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Field of Study</Label>
+                    <Input
+                      value={edu.field_of_study}
+                      onChange={(e) => updateEducation(edu.id, "field_of_study", e.target.value)}
+                      placeholder="Computer Science, etc."
+                      disabled={isLoading}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Start Date</Label>
+                    <Input
+                      type="month"
+                      value={edu.start_date}
+                      onChange={(e) => updateEducation(edu.id, "start_date", e.target.value)}
+                      disabled={isLoading}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>End Date</Label>
+                    <Input
+                      type="month"
+                      value={edu.end_date}
+                      onChange={(e) => updateEducation(edu.id, "end_date", e.target.value)}
+                      disabled={isLoading}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>GPA (Optional)</Label>
+                    <Input
+                      value={edu.gpa || ""}
+                      onChange={(e) => updateEducation(edu.id, "gpa", e.target.value)}
+                      placeholder="3.8/4.0"
+                      disabled={isLoading}
+                    />
+                  </div>
+                <div className="space-y-2">
+                  <Label>Description (Optional)</Label>
+                  <Textarea
+                    value={edu.description || ""}
+                    onChange={(e) => updateEducation(edu.id, "description", e.target.value)}
+                    placeholder="Relevant coursework, achievements, etc."
+                    rows={2}
+                    disabled={isLoading}
+                  />
+                </div>
                     <Button type="button" onClick={() => setEditingEducationId(null)} variant="secondary" className="mt-2">Done</Button>
                   </div>
                 ) : (
@@ -401,79 +397,79 @@ export function UserProfileForm({ profile, onSuccess }: UserProfileFormProps) {
               <div key={exp.id} className="p-4 border rounded-lg space-y-2 bg-muted/10">
                 {editingExperienceId === exp.id ? (
                   <div>
-                    <div className="space-y-2">
-                      <Label>Company *</Label>
-                      <Input
-                        value={exp.company}
-                        onChange={(e) => updateExperience(exp.id, "company", e.target.value)}
-                        placeholder="Company name"
-                        disabled={isLoading}
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Position *</Label>
-                      <Input
-                        value={exp.position}
-                        onChange={(e) => updateExperience(exp.id, "position", e.target.value)}
-                        placeholder="Job title"
-                        disabled={isLoading}
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Location</Label>
-                      <Input
-                        value={exp.location || ""}
-                        onChange={(e) => updateExperience(exp.id, "location", e.target.value)}
-                        placeholder="City, State"
-                        disabled={isLoading}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Start Date</Label>
-                      <Input
-                        type="month"
-                        value={exp.start_date}
-                        onChange={(e) => updateExperience(exp.id, "start_date", e.target.value)}
-                        disabled={isLoading}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>End Date</Label>
-                      <Input
-                        type="month"
-                        value={exp.end_date}
-                        onChange={(e) => updateExperience(exp.id, "end_date", e.target.value)}
-                        disabled={exp.current || isLoading}
-                      />
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        id={`current-${exp.id}`}
-                        checked={exp.current}
-                        onChange={(e) => {
-                          updateExperience(exp.id, "current", e.target.checked)
-                          if (e.target.checked) {
-                            updateExperience(exp.id, "end_date", "")
-                          }
-                        }}
-                        disabled={isLoading}
-                      />
-                      <Label htmlFor={`current-${exp.id}`}>I currently work here</Label>
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Description *</Label>
-                      <Textarea
-                        value={exp.description}
-                        onChange={(e) => updateExperience(exp.id, "description", e.target.value)}
-                        placeholder="Describe your responsibilities and achievements..."
-                        rows={3}
-                        disabled={isLoading}
-                        required
-                      />
-                    </div>
+                  <div className="space-y-2">
+                    <Label>Company *</Label>
+                    <Input
+                      value={exp.company}
+                      onChange={(e) => updateExperience(exp.id, "company", e.target.value)}
+                      placeholder="Company name"
+                      disabled={isLoading}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Position *</Label>
+                    <Input
+                      value={exp.position}
+                      onChange={(e) => updateExperience(exp.id, "position", e.target.value)}
+                      placeholder="Job title"
+                      disabled={isLoading}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Location</Label>
+                    <Input
+                      value={exp.location || ""}
+                      onChange={(e) => updateExperience(exp.id, "location", e.target.value)}
+                      placeholder="City, State"
+                      disabled={isLoading}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Start Date</Label>
+                    <Input
+                      type="month"
+                      value={exp.start_date}
+                      onChange={(e) => updateExperience(exp.id, "start_date", e.target.value)}
+                      disabled={isLoading}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>End Date</Label>
+                    <Input
+                      type="month"
+                      value={exp.end_date}
+                      onChange={(e) => updateExperience(exp.id, "end_date", e.target.value)}
+                      disabled={exp.current || isLoading}
+                    />
+                  </div>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id={`current-${exp.id}`}
+                    checked={exp.current}
+                    onChange={(e) => {
+                      updateExperience(exp.id, "current", e.target.checked)
+                      if (e.target.checked) {
+                        updateExperience(exp.id, "end_date", "")
+                      }
+                    }}
+                    disabled={isLoading}
+                  />
+                  <Label htmlFor={`current-${exp.id}`}>I currently work here</Label>
+                </div>
+                <div className="space-y-2">
+                  <Label>Description *</Label>
+                  <Textarea
+                    value={exp.description}
+                    onChange={(e) => updateExperience(exp.id, "description", e.target.value)}
+                    placeholder="Describe your responsibilities and achievements..."
+                    rows={3}
+                    disabled={isLoading}
+                    required
+                  />
+                </div>
                     <Button type="button" onClick={() => setEditingExperienceId(null)} variant="secondary" className="mt-2">Done</Button>
                   </div>
                 ) : (
@@ -512,102 +508,45 @@ export function UserProfileForm({ profile, onSuccess }: UserProfileFormProps) {
               <div key={project.id} className="p-4 border rounded-lg space-y-2 bg-muted/10">
                 {editingProjectId === project.id ? (
                   <div>
-                    <div className="space-y-2">
-                      <Label>Project Title *</Label>
-                      <Input
-                        value={project.title}
-                        onChange={(e) => updateProject(project.id, "title", e.target.value)}
-                        placeholder="Project name"
-                        disabled={isLoading}
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Description *</Label>
-                      <Textarea
-                        value={project.description}
-                        onChange={(e) => updateProject(project.id, "description", e.target.value)}
-                        placeholder="Describe the project and your role..."
-                        rows={3}
-                        disabled={isLoading}
-                        required
-                      />
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label>Start Date</Label>
-                        <Input
-                          type="month"
-                          value={project.start_date}
-                          onChange={(e) => updateProject(project.id, "start_date", e.target.value)}
-                          disabled={isLoading || project.is_ongoing}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>End Date (Optional)</Label>
-                        <Input
-                          type="month"
-                          value={project.end_date}
-                          onChange={(e) => updateProject(project.id, "end_date", e.target.value)}
-                          disabled={isLoading || project.is_ongoing}
-                        />
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        id={`ongoing-${project.id}`}
-                        checked={!!project.is_ongoing}
-                        onChange={(e) => updateProject(project.id, "is_ongoing", e.target.checked)}
-                        disabled={isLoading}
-                      />
-                      <Label htmlFor={`ongoing-${project.id}`}>Ongoing</Label>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label>Project URL (Optional)</Label>
-                        <Input
-                          type="url"
-                          value={project.url || ""}
-                          onChange={(e) => updateProject(project.id, "url", e.target.value)}
-                          placeholder="https://project-demo.com"
-                          disabled={isLoading}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>GitHub URL (Optional)</Label>
-                        <Input
-                          type="url"
-                          value={project.github_url || ""}
-                          onChange={(e) => updateProject(project.id, "github_url", e.target.value)}
-                          placeholder="https://github.com/user/project"
-                          disabled={isLoading}
-                        />
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Technologies Used</Label>
-                      <Input
-                        value={project.technologies.join(", ")}
-                        onChange={(e) =>
-                          updateProject(project.id, "technologies", e.target.value.split(", ").filter(Boolean))
-                        }
-                        placeholder="React, Node.js, PostgreSQL, etc."
-                        disabled={isLoading}
-                      />
-                      <p className="text-sm text-muted-foreground">Separate technologies with commas</p>
-                    </div>
+                <div className="space-y-2">
+                  <Label>Project Title *</Label>
+                  <Input
+                    value={project.title}
+                    onChange={(e) => updateProject(project.id, "title", e.target.value)}
+                    placeholder="Project name"
+                    disabled={isLoading}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Description *</Label>
+                  <Textarea
+                    value={project.description}
+                    onChange={(e) => updateProject(project.id, "description", e.target.value)}
+                    placeholder="Describe the project and your role..."
+                    rows={3}
+                    disabled={isLoading}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Technologies Used</Label>
+                  <Input
+                    value={project.technologies.join(", ")}
+                    onChange={(e) =>
+                      updateProject(project.id, "technologies", e.target.value.split(", ").filter(Boolean))
+                    }
+                    placeholder="React, Node.js, PostgreSQL, etc."
+                    disabled={isLoading}
+                  />
+                  <p className="text-sm text-muted-foreground">Separate technologies with commas</p>
+                </div>
                     <Button type="button" onClick={() => setEditingProjectId(null)} variant="secondary" className="mt-2">Done</Button>
                   </div>
                 ) : (
                   <div className="flex justify-between items-center">
                     <div>
                       <div className="font-medium">{project.title}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {project.is_ongoing
-                          ? "Ongoing"
-                          : `${formatMonthYear(project.start_date)} - ${formatMonthYear(project.end_date)}`}
-                      </div>
                     </div>
                     <div className="flex gap-2">
                       <Button type="button" size="sm" variant="outline" onClick={() => setEditingProjectId(project.id)}>Edit</Button>

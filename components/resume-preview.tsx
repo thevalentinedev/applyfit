@@ -174,7 +174,6 @@ ${coverLetter.body.closing}` : ''}
             <div key={index} className="border-l-2 border-green-500 pl-4">
               <div className="flex justify-between items-start mb-1">
                 <h5 className="font-medium text-[#1E293B]">{project.title}</h5>
-                <span className="text-xs text-[#64748B]">{project.period}</span>
               </div>
               <ul className="space-y-1">
                 {project.bullets.map((bullet, bulletIndex) => (

@@ -4,14 +4,14 @@ import { useState } from "react"
 import type { GeneratedResume } from "@/app/actions/generate-resume"
 import type { GeneratedCoverLetter } from "@/app/actions/generate-cover-letter"
 import { Button } from "@/components/ui/button"
-import { CoverLetterPreview } from "./cover-letter-preview"
+import CoverLetterPreview from "./cover-letter-preview"
 import { generateCoverLetter } from "@/app/actions/generate-cover-letter"
 import { useToast } from "@/hooks/use-toast"
 import { Loader2 } from "lucide-react"
 import { ToneSelector } from "./tone-selector"
 import { SectionRegenerator } from "./section-regenerator"
 import { analyzeTone, type ToneType } from "@/lib/tone-analyzer"
-import type { BulletGenerationContext } from "@/lib/resume-bullet-generator"
+import type { BulletGenerationContext } from "@/lib/enhanced-bullet-generator"
 
 interface EnhancedResumePreviewProps {
   resume: GeneratedResume
@@ -144,13 +144,16 @@ export function EnhancedResumePreview({
   if (showCoverLetter && coverLetter) {
     return (
       <CoverLetterPreview
-        coverLetter={coverLetter}
-        onRegenerate={handleRegenerateCoverLetter}
-        isRegenerating={isGeneratingCoverLetter}
-        onBack={() => setShowCoverLetter(false)}
-        toneAnalysis={toneAnalysis}
-        selectedTone={selectedTone}
-        onToneChange={setSelectedTone}
+        coverLetterContent={coverLetter.body ? `${coverLetter.greeting}
+
+${coverLetter.body.hook}
+
+${coverLetter.body.skills}
+
+${coverLetter.body.culture}
+
+${coverLetter.body.closing}` : ''}
+        userProfile={coverLetter}
       />
     )
   }
@@ -250,7 +253,6 @@ export function EnhancedResumePreview({
             <div key={index} className="border-l-2 border-green-500 pl-4">
               <div className="flex justify-between items-start mb-1">
                 <h5 className="font-medium text-[#1E293B]">{project.title}</h5>
-                <span className="text-xs text-[#64748B]">{project.period}</span>
               </div>
               <ul className="space-y-1">
                 {project.bullets.map((bullet, bulletIndex) => (

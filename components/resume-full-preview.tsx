@@ -556,19 +556,6 @@ export function ResumeFullPreview({
                         >
                           {project.title}
                         </h3>
-                        <span
-                          className="text-sm text-gray-600"
-                          style={{ fontSize: "11pt", fontFamily: "Arial, sans-serif", lineHeight: "1.15" }}
-                        >
-                          {(project as any)?.is_ongoing !== undefined
-                            ? ((project as any)?.is_ongoing
-                                ? "Ongoing"
-                                : ((project as any)?.start_date
-                                    ? formatMonthYear((project as any).start_date) +
-                                      ((project as any).end_date ? ` - ${formatMonthYear((project as any).end_date)}` : "")
-                                    : ""))
-                            : project.period}
-                        </span>
                       </div>
                       <ul className="list-disc pl-5 space-y-1 mt-1">
                         {(project.bullets || []).map((bullet, bulletIndex) => (

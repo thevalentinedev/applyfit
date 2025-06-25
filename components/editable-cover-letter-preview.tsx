@@ -342,53 +342,53 @@ ${userProfile?.full_name || "Your Name"}`
             {/* Overlay buttons (top right) */}
             {showOverlay && !isEditing && (
               <div className="absolute top-2 right-2 flex gap-2 z-10">
-                <Button
+          <Button
                   size="icon"
-                  variant="outline"
+            variant="outline"
                   className="shadow bg-white/80 hover:bg-brand-light border border-brand"
                   onClick={() => setIsEditing(true)}
                   title="Edit Manually"
-                >
+          >
                   <Edit3 className="w-4 h-4 text-brand" />
-                </Button>
-                <Button
+          </Button>
+          <Button
                   size="icon"
-                  variant="outline"
+            variant="outline"
                   className="shadow bg-white/80 hover:bg-brand-light border border-brand"
                   onClick={handleRegenerateCoverLetter}
                   title="Regenerate with AI"
                   disabled={isRegenerating || isRevising}
-                >
+          >
                   {isRegenerating ? <Loader2 className="w-4 h-4 animate-spin text-brand" /> : <Sparkles className="w-4 h-4 text-brand" />}
+          </Button>
+        </div>
+            )}
+          {isEditing ? (
+            <div className="space-y-4">
+              <div className="flex gap-2 p-2 border-b items-center justify-between">
+                <span className="text-sm font-medium text-gray-700">Edit Cover Letter:</span>
+              </div>
+              <Textarea
+                value={editedContent}
+                onChange={(e) => setEditedContent(e.target.value)}
+                className="min-h-[350px] resize-none font-serif text-sm leading-relaxed"
+                placeholder="Your cover letter content will appear here..."
+              />
+              <div className="flex gap-2">
+                  <Button onClick={handleSave} size="sm" className="bg-brand hover:bg-brand-dark">
+                  Save Changes
+                </Button>
+                <Button onClick={handleCancel} size="sm" variant="outline">
+                  Cancel
                 </Button>
               </div>
-            )}
-            {isEditing ? (
-              <div className="space-y-4">
-                <div className="flex gap-2 p-2 border-b items-center justify-between">
-                  <span className="text-sm font-medium text-gray-700">Edit Cover Letter:</span>
-                </div>
-                <Textarea
-                  value={editedContent}
-                  onChange={(e) => setEditedContent(e.target.value)}
-                  className="min-h-[350px] resize-none font-serif text-sm leading-relaxed"
-                  placeholder="Your cover letter content will appear here..."
-                />
-                <div className="flex gap-2">
-                  <Button onClick={handleSave} size="sm" className="bg-brand hover:bg-brand-dark">
-                    Save Changes
-                  </Button>
-                  <Button onClick={handleCancel} size="sm" variant="outline">
-                    Cancel
-                  </Button>
-                </div>
-              </div>
-            ) : (
+            </div>
+          ) : (
               <div className="whitespace-pre-line font-serif text-sm leading-relaxed">
                 {coverLetterContent || "No cover letter content available."}
               </div>
             )}
-          </div>
+            </div>
         </div>
         {/* Footer signature */}
         <div className="mt-8 pt-4 border-t">

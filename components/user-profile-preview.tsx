@@ -325,13 +325,6 @@ export function UserProfilePreview({ profile }: UserProfilePreviewProps) {
                             )}
                           </div>
                         </div>
-                        <div className="text-right text-sm text-muted-foreground">
-                          <div className="flex items-center gap-1">
-                            <Calendar className="h-3 w-3" />
-                            {formatDate(project.start_date)} -{" "}
-                            {project.end_date ? formatDate(project.end_date) : "Ongoing"}
-                          </div>
-                        </div>
                       </div>
                       <p className="text-sm text-muted-foreground whitespace-pre-line">{project.description}</p>
                       {project.technologies.length > 0 && (

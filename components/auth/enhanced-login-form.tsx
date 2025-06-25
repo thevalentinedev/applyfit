@@ -361,7 +361,7 @@ export function EnhancedLoginForm() {
             <div className="flex-grow border-t border-muted-foreground/20" />
             <span className="mx-2 text-xs text-muted-foreground">or</span>
             <div className="flex-grow border-t border-muted-foreground/20" />
-          </div>
+              </div>
           <form onSubmit={handleEmailSubmit} className="space-y-4">
             {state.error && (
               <Alert variant="destructive">
@@ -382,7 +382,7 @@ export function EnhancedLoginForm() {
                 disabled={state.status === "sending"}
                 autoComplete="email"
               />
-            </div>
+              </div>
 
             <Button type="submit" className="w-full" disabled={state.status === "sending" || !state.email.trim()}>
               {state.status === "sending" ? (

@@ -309,24 +309,10 @@ export async function exportResumeToDocx(
       )
 
       resume.projects.forEach((project) => {
-        let dateText = project.period
-        if (typeof (project as any)?.is_ongoing !== "undefined") {
-          if ((project as any).is_ongoing) {
-            dateText = "Ongoing"
-          } else if ((project as any).start_date) {
-            dateText = formatMonthYear((project as any).start_date)
-            if ((project as any).end_date) {
-              dateText += ` - ${formatMonthYear((project as any).end_date)}`
-            }
-          } else {
-            dateText = ""
-          }
-        }
         sections.push(
           new Paragraph({
             children: [
               new TextRun({ text: project.title, bold: true, size: 22 }),
-              new TextRun({ text: dateText ? ` - ${dateText}` : "", size: 22 }),
             ],
             spacing: { after: 100 },
           }),
@@ -356,7 +342,6 @@ export async function exportResumeToDocx(
       resume.candidateEducation.forEach((edu) => {
         const degreeText = `${edu.degree || "Degree"}${edu.field_of_study ? ` in ${edu.field_of_study}` : ""}`
         const institutionText = `${edu.institution || "Institution"}${edu.location ? ` - ${edu.location}` : ""}`
-        const dateText = `${formatMonthYear((edu as any).start_date || "")} - ${formatMonthYear((edu as any).end_date || "")}`
         sections.push(
           new Paragraph({
             children: [new TextRun({ text: degreeText, bold: true, size: 22 })],
@@ -365,10 +350,6 @@ export async function exportResumeToDocx(
           new Paragraph({
             children: [new TextRun({ text: institutionText, size: 22 })],
             spacing: { after: 10 },
-          }),
-          new Paragraph({
-            children: [new TextRun({ text: dateText, size: 18, color: "888888" })],
-            spacing: { after: edu.gpa || edu.achievements ? 50 : 100 },
           }),
         )
         if (edu.gpa) {
@@ -568,20 +549,7 @@ export async function exportResumeToPDF(
       addText("SELECTED PROJECTS", 14, true)
       addSpacing(5)
       resume.projects.forEach((project) => {
-        let dateText = project.period
-        if (typeof (project as any)?.is_ongoing !== "undefined") {
-          if ((project as any).is_ongoing) {
-            dateText = "Ongoing"
-          } else if ((project as any).start_date) {
-            dateText = formatMonthYear((project as any).start_date)
-            if ((project as any).end_date) {
-              dateText += ` - ${formatMonthYear((project as any).end_date)}`
-            }
-          } else {
-            dateText = ""
-          }
-        }
-        addText(`${project.title}${dateText ? ` - ${dateText}` : ""}`, 11, true)
+        addText(`${project.title}`, 11, true)
         project.bullets?.forEach((bullet) => {
           addText(`• ${bullet}`, 11)
         })
@@ -596,16 +564,8 @@ export async function exportResumeToPDF(
       resume.candidateEducation.forEach((edu) => {
         const degreeText = `${edu.degree || "Degree"}${edu.field_of_study ? ` in ${edu.field_of_study}` : ""}`
         const institutionText = `${edu.institution || "Institution"}${edu.location ? ` - ${edu.location}` : ""}`
-        const dateText = `${formatMonthYear((edu as any).start_date || "")} - ${formatMonthYear((edu as any).end_date || "")}`
         addText(degreeText, 11, true)
         addText(institutionText, 11)
-        addText(dateText, 10)
-        if (edu.gpa) {
-          addText(`GPA: ${edu.gpa}`, 11)
-        }
-        if (edu.achievements) {
-          addText(edu.achievements, 11)
-        }
         addSpacing(10)
       })
     }

@@ -40,6 +40,6 @@ export default async function ApplicationDetailPage({ params }: { params: { id: 
     <ApplicationDetailClient 
       application={application}
       statusColors={statusColors}
-    />
+                />
   )
 }

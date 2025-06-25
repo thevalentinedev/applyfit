@@ -770,7 +770,6 @@ ${userName}`
                   <div key={projectIndex} className="border-l-4 border-green-500 pl-4 bg-gray-50 rounded-r-lg p-3">
                     <div className="flex justify-between items-start mb-2">
                       <h5 className="font-medium text-gray-900">{project?.title || "Project"}</h5>
-                      <span className="text-xs text-gray-500">{project?.period || "Period"}</span>
                     </div>
                     {project?.bullets && Array.isArray(project.bullets) ? (
                       <ul className="space-y-2">

@@ -373,10 +373,10 @@ export async function exportResumeToPDF(resume: GeneratedResume): Promise<void> 
         
         if (uploadResult.success && uploadResult.url) {
           const result = await storeResumeFile(resume.applicationId, "pdf", uploadResult.url)
-          if (result.success) {
-            console.log("Resume PDF stored successfully:", result.fileUrl)
-          } else {
-            console.error("Failed to store resume PDF:", result.error)
+        if (result.success) {
+          console.log("Resume PDF stored successfully:", result.fileUrl)
+        } else {
+          console.error("Failed to store resume PDF:", result.error)
           }
         } else {
           console.error("Failed to upload resume PDF:", uploadResult.error)
@@ -572,10 +572,10 @@ export async function exportCoverLetterToPDF(coverLetter: GeneratedCoverLetter):
         
         if (uploadResult.success && uploadResult.url) {
           const result = await storeCoverLetterFile(coverLetter.applicationId, "pdf", uploadResult.url)
-          if (result.success) {
-            console.log("Cover letter PDF stored successfully:", result.fileUrl)
-          } else {
-            console.error("Failed to store cover letter PDF:", result.error)
+        if (result.success) {
+          console.log("Cover letter PDF stored successfully:", result.fileUrl)
+        } else {
+          console.error("Failed to store cover letter PDF:", result.error)
           }
         } else {
           console.error("Failed to upload cover letter PDF:", uploadResult.error)
@@ -686,20 +686,20 @@ export async function exportResumeToDocx(resume: GeneratedResume): Promise<void>
               }),
               ...(resume.website
                 ? [
-                    new ExternalHyperlink({
-                      children: [
-                        new TextRun({
+              new ExternalHyperlink({
+                children: [
+                  new TextRun({
                           text: getWebsiteDomain(resume.website),
-                          style: "Hyperlink",
-                          size: 20, // 10pt
+                    style: "Hyperlink",
+                    size: 20, // 10pt
                           font: "Calibri",
                           color: "000000",
-                        }),
-                      ],
+                  }),
+                ],
                       link: resume.website.startsWith("http")
                         ? resume.website
                         : `https://${resume.website}`,
-                    }),
+              }),
                   ]
                 : []),
             ],
@@ -973,34 +973,34 @@ export async function exportResumeToDocx(resume: GeneratedResume): Promise<void>
           }),
           ...(resume.education || []).map(
             (edu: any) =>
-              new Paragraph({
-                children: [
-                  new TextRun({
+                new Paragraph({
+                  children: [
+                    new TextRun({
                     text: `${edu.degree} in ${edu.field_of_study}`,
-                    bold: true,
-                    size: 22, // 11pt
+                      bold: true,
+                      size: 22, // 11pt
                     font: "Calibri",
                     color: "000000",
-                  }),
-                  new TextRun({
+                    }),
+                    new TextRun({
                     text: `\n${edu.institution} | ${edu.graduation_year}`,
-                    size: 22, // 11pt
+                      size: 22, // 11pt
                     font: "Calibri",
                     color: "000000",
-                  }),
-                  ...(edu.gpa
-                    ? [
-                        new TextRun({
+                }),
+                ...(edu.gpa
+                  ? [
+                          new TextRun({
                           text: `\nGPA: ${edu.gpa}`,
-                          size: 22, // 11pt
+                            size: 22, // 11pt
                           font: "Calibri",
                           color: "000000",
-                        }),
-                      ]
-                    : []),
-                ],
+                      }),
+                    ]
+                  : []),
+                        ],
                 spacing: { after: 200, line: 276, lineRule: "auto" },
-              }),
+                }),
           ),
         ],
       },
@@ -1014,132 +1014,132 @@ export async function exportResumeToDocx(resume: GeneratedResume): Promise<void>
 export async function exportCoverLetterToDocx(coverLetter: GeneratedCoverLetter): Promise<void> {
   const sections = [
     // Header block
-    new Paragraph({
-      children: [
-        new TextRun({
+          new Paragraph({
+            children: [
+              new TextRun({
           text: coverLetter.full_name || "Candidate Name",
-          bold: true,
-          size: 22, // 11pt
+                bold: true,
+                size: 22, // 11pt
           font: "Calibri",
           color: "000000",
-        }),
-      ],
+              }),
+            ],
       spacing: { after: 50 },
       alignment: AlignmentType.LEFT,
-    }),
-    new Paragraph({
-      children: [
-        new TextRun({
+          }),
+          new Paragraph({
+            children: [
+              new TextRun({
           text: `${coverLetter.email || "email@example.com"} | ${formatPhoneNumber(coverLetter.phone || "")} | ${coverLetter.linkedin || "LinkedIn"} | ${coverLetter.location}`,
-          size: 22, // 11pt
+                    size: 22, // 11pt
           font: "Calibri",
           color: "000000",
-        }),
-      ],
+                  }),
+                ],
       spacing: { after: 30 },
       alignment: AlignmentType.LEFT,
     }),
-    new Paragraph({
-      children: [
-        new TextRun({
+          new Paragraph({
+            children: [
+              new TextRun({
           text: coverLetter.date,
-          size: 22, // 11pt
+                  size: 22, // 11pt
           font: "Calibri",
           color: "000000",
-        }),
-      ],
+                }),
+              ],
       spacing: { after: 30 },
       alignment: AlignmentType.LEFT,
-    }),
+                    }),
     // Recipient block
-    new Paragraph({
-      children: [
-        new TextRun({
-          text: coverLetter.recipient.name,
-          size: 22, // 11pt
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: coverLetter.recipient.name,
+                size: 22, // 11pt
           font: "Calibri",
           color: "000000",
-        }),
-      ],
+              }),
+            ],
       spacing: { after: 10 },
       alignment: AlignmentType.LEFT,
-    }),
-    new Paragraph({
-      children: [
-        new TextRun({
-          text: coverLetter.recipient.company,
-          size: 22, // 11pt
+          }),
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: coverLetter.recipient.company,
+                size: 22, // 11pt
           font: "Calibri",
           color: "000000",
-        }),
-      ],
+              }),
+            ],
       spacing: { after: 10 },
       alignment: AlignmentType.LEFT,
-    }),
-    new Paragraph({
-      children: [
-        new TextRun({
-          text: coverLetter.recipient.location,
-          size: 22, // 11pt
+          }),
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: coverLetter.recipient.location,
+                size: 22, // 11pt
           font: "Calibri",
           color: "000000",
-        }),
-      ],
+              }),
+            ],
       spacing: { after: 30 },
       alignment: AlignmentType.LEFT,
-    }),
-    // Greeting
-    new Paragraph({
-      children: [
-        new TextRun({
-          text: coverLetter.greeting,
-          size: 22, // 11pt
+          }),
+          // Greeting
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: coverLetter.greeting,
+                size: 22, // 11pt
           font: "Calibri",
           color: "000000",
-        }),
-      ],
+              }),
+            ],
       spacing: { after: 30 },
       alignment: AlignmentType.LEFT,
-    }),
+          }),
     // Hook
-    new Paragraph({
-      children: [
-        new TextRun({
-          text: coverLetter.body.hook,
-          size: 22, // 11pt
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: coverLetter.body.hook,
+                size: 22, // 11pt
           font: "Calibri",
           color: "000000",
-        }),
-      ],
+              }),
+            ],
       spacing: { after: 30 },
       alignment: AlignmentType.LEFT,
-    }),
+          }),
     // Skills
-    new Paragraph({
-      children: [
-        new TextRun({
-          text: coverLetter.body.skills,
-          size: 22, // 11pt
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: coverLetter.body.skills,
+                size: 22, // 11pt
           font: "Calibri",
           color: "000000",
-        }),
-      ],
+              }),
+            ],
       spacing: { after: 30 },
       alignment: AlignmentType.LEFT,
-    }),
+          }),
     // Culture fit
-    new Paragraph({
-      children: [
-        new TextRun({
+          new Paragraph({
+            children: [
+              new TextRun({
           text: coverLetter.body.culture,
-          size: 22, // 11pt
+                size: 22, // 11pt
           font: "Calibri",
           color: "000000",
-        }),
-      ],
+              }),
+            ],
       spacing: { after: 30 },
       alignment: AlignmentType.LEFT,
-    }),
+        }),
     // Assertive closing
     new Paragraph({
       children: [
@@ -1178,7 +1178,7 @@ export async function exportCoverLetterToDocx(coverLetter: GeneratedCoverLetter)
       ],
       spacing: { after: 10 },
       alignment: AlignmentType.LEFT,
-    }),
+          }),
   ]
 
   const docxDoc = new Document({
