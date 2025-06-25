@@ -325,6 +325,26 @@ export function EnhancedLoginForm() {
     }
   }
 
+  const handleDemoLogin = async () => {
+    updateState({ status: "sending", error: null })
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: "demo@applyfit.com",
+        password: "demopassword",
+      })
+      if (error) {
+        updateState({ status: "error", error: error.message })
+        toast({ title: "Demo Login Failed", description: error.message, variant: "destructive" })
+      } else {
+        updateState({ status: "success", error: null })
+        toast({ title: "Demo Login Successful", description: "You are now logged in as a demo user." })
+      }
+    } catch (error: any) {
+      updateState({ status: "error", error: error.message })
+      toast({ title: "Demo Login Failed", description: error.message, variant: "destructive" })
+    }
+  }
+
   // Method Selection Step
   if (state.step === "method-selection") {
     return (
@@ -375,6 +395,20 @@ export function EnhancedLoginForm() {
                   <Mail className="mr-2 h-4 w-4" />
                   Send Magic Link
                 </>
+              )}
+            </Button>
+            {/* Demo Login Button - always visible on main login screen */}
+            <Button
+              type="button"
+              variant="secondary"
+              className="w-full mt-2"
+              onClick={handleDemoLogin}
+              disabled={state.status === "sending"}
+            >
+              {state.status === "sending" ? (
+                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Logging in as Demo...</>
+              ) : (
+                <>Demo Login</>
               )}
             </Button>
           </form>
@@ -714,5 +748,75 @@ export function EnhancedLoginForm() {
     return <PasswordLoginForm onBack={() => updateState({ step: "method-selection", error: null })} />
   }
 
-  return null
+  return (
+    <Card className="w-full max-w-md">
+      <CardHeader className="text-center">
+        <CardTitle className="text-2xl font-heading">Sign In</CardTitle>
+        <CardDescription>Sign in with Google or Magic Link</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <Button onClick={handleGoogleSignIn} className="w-full" disabled={state.status === "sending"}>
+          <LogIn className="mr-2 h-4 w-4" /> Sign in with Google
+        </Button>
+        <div className="relative flex items-center py-2">
+          <div className="flex-grow border-t border-muted-foreground/20" />
+          <span className="mx-2 text-xs text-muted-foreground">or</span>
+          <div className="flex-grow border-t border-muted-foreground/20" />
+        </div>
+        <form onSubmit={handleEmailSubmit} className="space-y-4">
+          {state.error && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{state.error}</AlertDescription>
+            </Alert>
+          )}
+
+          <div className="space-y-2">
+            <Label htmlFor="email">Email Address</Label>
+            <Input
+              id="email"
+              type="email"
+              placeholder="Enter your email address"
+              value={state.email}
+              onChange={(e) => updateState({ email: e.target.value })}
+              required
+              disabled={state.status === "sending"}
+              autoComplete="email"
+            />
+          </div>
+
+          <Button type="submit" className="w-full" disabled={state.status === "sending" || !state.email.trim()}>
+            {state.status === "sending" ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Sending Magic Link...
+              </>
+            ) : (
+              <>
+                <Mail className="mr-2 h-4 w-4" />
+                Send Magic Link
+              </>
+            )}
+          </Button>
+          {/* Demo Login Button - always visible on main login screen */}
+          <Button
+            type="button"
+            variant="secondary"
+            className="w-full mt-2"
+            onClick={handleDemoLogin}
+            disabled={state.status === "sending"}
+          >
+            {state.status === "sending" ? (
+              <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Logging in as Demo...</>
+            ) : (
+              <>Demo Login</>
+            )}
+          </Button>
+        </form>
+        {state.status === "sent" && (
+          <div className="text-green-600 text-sm text-center">Check your email for the magic link.</div>
+        )}
+      </CardContent>
+    </Card>
+  )
 }

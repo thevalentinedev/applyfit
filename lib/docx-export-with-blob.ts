@@ -122,6 +122,14 @@ const splitTextToFit = (doc: jsPDF, text: string, maxWidth: number): string[] =>
   return lines
 }
 
+// Helper to format month-year
+const formatMonthYear = (date: string) => {
+  if (!date) return ""
+  const d = new Date(date)
+  if (isNaN(d.getTime())) return date
+  return d.toLocaleString("default", { month: "short", year: "numeric" })
+}
+
 export async function exportResumeToDocx(
   resume: GeneratedResume,
 ): Promise<{ success: boolean; url?: string; error?: string }> {
@@ -301,16 +309,21 @@ export async function exportResumeToDocx(
       )
 
       resume.projects.forEach((project) => {
+        let dateText = project.period
+        if (typeof (project as any)?.is_ongoing !== "undefined") {
+          dateText = (project as any).is_ongoing
+            ? "Ongoing"
+            : `${formatMonthYear((project as any).start_date || "")} - ${formatMonthYear((project as any).end_date || "")}`
+        }
         sections.push(
           new Paragraph({
             children: [
               new TextRun({ text: project.title, bold: true, size: 22 }),
-              new TextRun({ text: ` - ${project.period}`, size: 22 }),
+              new TextRun({ text: ` - ${dateText}`, size: 22 }),
             ],
             spacing: { after: 100 },
           }),
         )
-
         project.bullets?.forEach((bullet) => {
           sections.push(
             new Paragraph({
@@ -334,20 +347,23 @@ export async function exportResumeToDocx(
       )
 
       resume.candidateEducation.forEach((edu) => {
-        const degreeText = `${edu.degree || "Degree"}${edu.field_of_study ? ` in ${edu.field_of_study}` : ""} - ${edu.graduation_year || "Year"}`
+        const degreeText = `${edu.degree || "Degree"}${edu.field_of_study ? ` in ${edu.field_of_study}` : ""}`
         const institutionText = `${edu.institution || "Institution"}${edu.location ? ` - ${edu.location}` : ""}`
-
+        const dateText = `${formatMonthYear((edu as any).start_date || "")} - ${formatMonthYear((edu as any).end_date || "")}`
         sections.push(
           new Paragraph({
             children: [new TextRun({ text: degreeText, bold: true, size: 22 })],
-            spacing: { after: 50 },
+            spacing: { after: 20 },
           }),
           new Paragraph({
             children: [new TextRun({ text: institutionText, size: 22 })],
+            spacing: { after: 10 },
+          }),
+          new Paragraph({
+            children: [new TextRun({ text: dateText, size: 18, color: "888888" })],
             spacing: { after: edu.gpa || edu.achievements ? 50 : 100 },
           }),
         )
-
         if (edu.gpa) {
           sections.push(
             new Paragraph({
@@ -356,7 +372,6 @@ export async function exportResumeToDocx(
             }),
           )
         }
-
         if (edu.achievements) {
           sections.push(
             new Paragraph({
@@ -546,7 +561,13 @@ export async function exportResumeToPDF(
       addText("SELECTED PROJECTS", 14, true)
       addSpacing(5)
       resume.projects.forEach((project) => {
-        addText(`${project.title} - ${project.period}`, 11, true)
+        let dateText = project.period
+        if (typeof (project as any)?.is_ongoing !== "undefined") {
+          dateText = (project as any).is_ongoing
+            ? "Ongoing"
+            : `${formatMonthYear((project as any).start_date || "")} - ${formatMonthYear((project as any).end_date || "")}`
+        }
+        addText(`${project.title} - ${dateText}`, 11, true)
         project.bullets?.forEach((bullet) => {
           addText(`• ${bullet}`, 11)
         })
@@ -559,12 +580,12 @@ export async function exportResumeToPDF(
       addText("EDUCATION", 14, true)
       addSpacing(5)
       resume.candidateEducation.forEach((edu) => {
-        const degreeText = `${edu.degree || "Degree"}${edu.field_of_study ? ` in ${edu.field_of_study}` : ""} - ${edu.graduation_year || "Year"}`
+        const degreeText = `${edu.degree || "Degree"}${edu.field_of_study ? ` in ${edu.field_of_study}` : ""}`
         const institutionText = `${edu.institution || "Institution"}${edu.location ? ` - ${edu.location}` : ""}`
-
+        const dateText = `${formatMonthYear((edu as any).start_date || "")} - ${formatMonthYear((edu as any).end_date || "")}`
         addText(degreeText, 11, true)
         addText(institutionText, 11)
-
+        addText(dateText, 10)
         if (edu.gpa) {
           addText(`GPA: ${edu.gpa}`, 11)
         }

@@ -80,6 +80,14 @@ const formatPhoneNumber = (phone: string) => {
   return phone // Return original if not 10 digits
 }
 
+// Helper to format month-year
+const formatMonthYear = (date: string) => {
+  if (!date) return ""
+  const d = new Date(date)
+  if (isNaN(d.getTime())) return date
+  return d.toLocaleString("default", { month: "short", year: "numeric" })
+}
+
 export function ResumeFullPreview({
   resume,
   userProfile,
@@ -552,7 +560,11 @@ export function ResumeFullPreview({
                           className="text-sm text-gray-600"
                           style={{ fontSize: "11pt", fontFamily: "Arial, sans-serif", lineHeight: "1.15" }}
                         >
-                          {project.period}
+                          {(project as any)?.is_ongoing !== undefined
+                            ? ((project as any)?.is_ongoing
+                                ? "Ongoing"
+                                : `${formatMonthYear((project as any)?.start_date || "")} - ${formatMonthYear((project as any)?.end_date || "")}`)
+                            : project.period}
                         </span>
                       </div>
                       <ul className="list-disc pl-5 space-y-1 mt-1">
@@ -587,14 +599,16 @@ export function ResumeFullPreview({
                           className="font-semibold text-gray-900"
                           style={{ fontSize: "11pt", fontFamily: "Arial, sans-serif", lineHeight: "1.15" }}
                         >
-                          {edu.degree || "Degree"} {edu.field_of_study ? `in ${edu.field_of_study}` : ""} -{" "}
-                          {edu.graduation_year || "Year"}
+                          {edu.degree || "Degree"} {edu.field_of_study ? `in ${edu.field_of_study}` : ""}
                         </h3>
                         <p
                           className="text-sm text-gray-700"
                           style={{ fontSize: "11pt", fontFamily: "Arial, sans-serif", lineHeight: "1.15" }}
                         >
                           {edu.institution || "Institution"} - {edu.location || "Location"}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {formatMonthYear(edu.start_date)} - {formatMonthYear(edu.end_date)}
                         </p>
                         {edu.gpa && (
                           <p

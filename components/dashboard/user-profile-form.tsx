@@ -38,7 +38,8 @@ interface Project {
   description: string
   technologies: string[]
   start_date: string
-  end_date?: string
+  end_date: string
+  is_ongoing?: boolean
   url?: string
   github_url?: string
 }
@@ -69,6 +70,9 @@ export function UserProfileForm({ profile, onSuccess }: UserProfileFormProps) {
   const [experience, setExperience] = useState<Experience[]>(profile.professional_experience || [])
   const [projects, setProjects] = useState<Project[]>(profile.projects_achievements || [])
   const { toast } = useToast()
+  const [editingEducationId, setEditingEducationId] = useState<string | null>(null)
+  const [editingExperienceId, setEditingExperienceId] = useState<string | null>(null)
+  const [editingProjectId, setEditingProjectId] = useState<string | null>(null)
 
   const handleSubmit = async (formData: FormData) => {
     setIsLoading(true)
@@ -153,16 +157,26 @@ export function UserProfileForm({ profile, onSuccess }: UserProfileFormProps) {
       description: "",
       technologies: [],
       start_date: "",
+      end_date: "",
+      is_ongoing: false,
     }
     setProjects([...projects, newProject])
   }
 
-  const updateProject = (id: string, field: keyof Project, value: string | string[]) => {
+  const updateProject = (id: string, field: keyof Project, value: string | string[] | boolean) => {
     setProjects(projects.map((proj) => (proj.id === id ? { ...proj, [field]: value } : proj)))
   }
 
   const removeProject = (id: string) => {
     setProjects(projects.filter((proj) => proj.id !== id))
+  }
+
+  // Helper to format month-year
+  const formatMonthYear = (date: string) => {
+    if (!date) return ""
+    const d = new Date(date)
+    if (isNaN(d.getTime())) return date
+    return d.toLocaleString("default", { month: "short", year: "numeric" })
   }
 
   return (
@@ -277,99 +291,94 @@ export function UserProfileForm({ profile, onSuccess }: UserProfileFormProps) {
             <CardDescription>Your educational background</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            {education.length === 0 && <div className="text-muted-foreground">No education added yet.</div>}
             {education.map((edu, index) => (
-              <div key={edu.id} className="p-4 border rounded-lg space-y-4">
-                <div className="flex justify-between items-center">
-                  <h4 className="font-medium">Education #{index + 1}</h4>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => removeEducation(edu.id)}
-                    disabled={isLoading}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Institution *</Label>
-                    <Input
-                      value={edu.institution}
-                      onChange={(e) => updateEducation(edu.id, "institution", e.target.value)}
-                      placeholder="University/School name"
-                      disabled={isLoading}
-                      required
-                    />
+              <div key={edu.id} className="p-4 border rounded-lg space-y-2 bg-muted/10">
+                {editingEducationId === edu.id ? (
+                  <div>
+                    <div className="space-y-2">
+                      <Label>Institution *</Label>
+                      <Input
+                        value={edu.institution}
+                        onChange={(e) => updateEducation(edu.id, "institution", e.target.value)}
+                        placeholder="University/School name"
+                        disabled={isLoading}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Degree *</Label>
+                      <Input
+                        value={edu.degree}
+                        onChange={(e) => updateEducation(edu.id, "degree", e.target.value)}
+                        placeholder="Bachelor's, Master's, etc."
+                        disabled={isLoading}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Field of Study</Label>
+                      <Input
+                        value={edu.field_of_study}
+                        onChange={(e) => updateEducation(edu.id, "field_of_study", e.target.value)}
+                        placeholder="Computer Science, etc."
+                        disabled={isLoading}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Start Date</Label>
+                      <Input
+                        type="month"
+                        value={edu.start_date}
+                        onChange={(e) => updateEducation(edu.id, "start_date", e.target.value)}
+                        disabled={isLoading}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>End Date</Label>
+                      <Input
+                        type="month"
+                        value={edu.end_date}
+                        onChange={(e) => updateEducation(edu.id, "end_date", e.target.value)}
+                        disabled={isLoading}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>GPA (Optional)</Label>
+                      <Input
+                        value={edu.gpa || ""}
+                        onChange={(e) => updateEducation(edu.id, "gpa", e.target.value)}
+                        placeholder="3.8/4.0"
+                        disabled={isLoading}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Description (Optional)</Label>
+                      <Textarea
+                        value={edu.description || ""}
+                        onChange={(e) => updateEducation(edu.id, "description", e.target.value)}
+                        placeholder="Relevant coursework, achievements, etc."
+                        rows={2}
+                        disabled={isLoading}
+                      />
+                    </div>
+                    <Button type="button" onClick={() => setEditingEducationId(null)} variant="secondary" className="mt-2">Done</Button>
                   </div>
-                  <div className="space-y-2">
-                    <Label>Degree *</Label>
-                    <Input
-                      value={edu.degree}
-                      onChange={(e) => updateEducation(edu.id, "degree", e.target.value)}
-                      placeholder="Bachelor's, Master's, etc."
-                      disabled={isLoading}
-                      required
-                    />
+                ) : (
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <div className="font-medium">{edu.degree} in {edu.field_of_study}</div>
+                      <div className="text-sm text-muted-foreground">{edu.institution}</div>
+                      <div className="text-xs text-muted-foreground">{formatMonthYear(edu.start_date)} - {formatMonthYear(edu.end_date)}</div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button type="button" size="sm" variant="outline" onClick={() => setEditingEducationId(edu.id)}>Edit</Button>
+                      <Button type="button" size="sm" variant="ghost" onClick={() => removeEducation(edu.id)} disabled={isLoading}><Trash2 className="h-4 w-4" /></Button>
+                    </div>
                   </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label>Field of Study</Label>
-                    <Input
-                      value={edu.field_of_study}
-                      onChange={(e) => updateEducation(edu.id, "field_of_study", e.target.value)}
-                      placeholder="Computer Science, etc."
-                      disabled={isLoading}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Start Date</Label>
-                    <Input
-                      type="month"
-                      value={edu.start_date}
-                      onChange={(e) => updateEducation(edu.id, "start_date", e.target.value)}
-                      disabled={isLoading}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>End Date</Label>
-                    <Input
-                      type="month"
-                      value={edu.end_date}
-                      onChange={(e) => updateEducation(edu.id, "end_date", e.target.value)}
-                      disabled={isLoading}
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>GPA (Optional)</Label>
-                    <Input
-                      value={edu.gpa || ""}
-                      onChange={(e) => updateEducation(edu.id, "gpa", e.target.value)}
-                      placeholder="3.8/4.0"
-                      disabled={isLoading}
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Description (Optional)</Label>
-                  <Textarea
-                    value={edu.description || ""}
-                    onChange={(e) => updateEducation(edu.id, "description", e.target.value)}
-                    placeholder="Relevant coursework, achievements, etc."
-                    rows={2}
-                    disabled={isLoading}
-                  />
-                </div>
+                )}
               </div>
             ))}
-
             <Button type="button" onClick={addEducation} variant="outline" disabled={isLoading}>
               <Plus className="h-4 w-4 mr-2" />
               Add Education
@@ -387,104 +396,100 @@ export function UserProfileForm({ profile, onSuccess }: UserProfileFormProps) {
             <CardDescription>Your work history and experience</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            {experience.length === 0 && <div className="text-muted-foreground">No experience added yet.</div>}
             {experience.map((exp, index) => (
-              <div key={exp.id} className="p-4 border rounded-lg space-y-4">
-                <div className="flex justify-between items-center">
-                  <h4 className="font-medium">Experience #{index + 1}</h4>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => removeExperience(exp.id)}
-                    disabled={isLoading}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Company *</Label>
-                    <Input
-                      value={exp.company}
-                      onChange={(e) => updateExperience(exp.id, "company", e.target.value)}
-                      placeholder="Company name"
-                      disabled={isLoading}
-                      required
-                    />
+              <div key={exp.id} className="p-4 border rounded-lg space-y-2 bg-muted/10">
+                {editingExperienceId === exp.id ? (
+                  <div>
+                    <div className="space-y-2">
+                      <Label>Company *</Label>
+                      <Input
+                        value={exp.company}
+                        onChange={(e) => updateExperience(exp.id, "company", e.target.value)}
+                        placeholder="Company name"
+                        disabled={isLoading}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Position *</Label>
+                      <Input
+                        value={exp.position}
+                        onChange={(e) => updateExperience(exp.id, "position", e.target.value)}
+                        placeholder="Job title"
+                        disabled={isLoading}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Location</Label>
+                      <Input
+                        value={exp.location || ""}
+                        onChange={(e) => updateExperience(exp.id, "location", e.target.value)}
+                        placeholder="City, State"
+                        disabled={isLoading}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Start Date</Label>
+                      <Input
+                        type="month"
+                        value={exp.start_date}
+                        onChange={(e) => updateExperience(exp.id, "start_date", e.target.value)}
+                        disabled={isLoading}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>End Date</Label>
+                      <Input
+                        type="month"
+                        value={exp.end_date}
+                        onChange={(e) => updateExperience(exp.id, "end_date", e.target.value)}
+                        disabled={exp.current || isLoading}
+                      />
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id={`current-${exp.id}`}
+                        checked={exp.current}
+                        onChange={(e) => {
+                          updateExperience(exp.id, "current", e.target.checked)
+                          if (e.target.checked) {
+                            updateExperience(exp.id, "end_date", "")
+                          }
+                        }}
+                        disabled={isLoading}
+                      />
+                      <Label htmlFor={`current-${exp.id}`}>I currently work here</Label>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Description *</Label>
+                      <Textarea
+                        value={exp.description}
+                        onChange={(e) => updateExperience(exp.id, "description", e.target.value)}
+                        placeholder="Describe your responsibilities and achievements..."
+                        rows={3}
+                        disabled={isLoading}
+                        required
+                      />
+                    </div>
+                    <Button type="button" onClick={() => setEditingExperienceId(null)} variant="secondary" className="mt-2">Done</Button>
                   </div>
-                  <div className="space-y-2">
-                    <Label>Position *</Label>
-                    <Input
-                      value={exp.position}
-                      onChange={(e) => updateExperience(exp.id, "position", e.target.value)}
-                      placeholder="Job title"
-                      disabled={isLoading}
-                      required
-                    />
+                ) : (
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <div className="font-medium">{exp.position} at {exp.company}</div>
+                      <div className="text-xs text-muted-foreground">{formatMonthYear(exp.start_date)} - {exp.current ? "Present" : formatMonthYear(exp.end_date)}</div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button type="button" size="sm" variant="outline" onClick={() => setEditingExperienceId(exp.id)}>Edit</Button>
+                      <Button type="button" size="sm" variant="ghost" onClick={() => removeExperience(exp.id)} disabled={isLoading}><Trash2 className="h-4 w-4" /></Button>
+                    </div>
                   </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label>Location</Label>
-                    <Input
-                      value={exp.location || ""}
-                      onChange={(e) => updateExperience(exp.id, "location", e.target.value)}
-                      placeholder="City, State"
-                      disabled={isLoading}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Start Date</Label>
-                    <Input
-                      type="month"
-                      value={exp.start_date}
-                      onChange={(e) => updateExperience(exp.id, "start_date", e.target.value)}
-                      disabled={isLoading}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>End Date</Label>
-                    <Input
-                      type="month"
-                      value={exp.end_date}
-                      onChange={(e) => updateExperience(exp.id, "end_date", e.target.value)}
-                      disabled={exp.current || isLoading}
-                    />
-                  </div>
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    id={`current-${exp.id}`}
-                    checked={exp.current}
-                    onChange={(e) => {
-                      updateExperience(exp.id, "current", e.target.checked)
-                      if (e.target.checked) {
-                        updateExperience(exp.id, "end_date", "")
-                      }
-                    }}
-                    disabled={isLoading}
-                  />
-                  <Label htmlFor={`current-${exp.id}`}>I currently work here</Label>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Description *</Label>
-                  <Textarea
-                    value={exp.description}
-                    onChange={(e) => updateExperience(exp.id, "description", e.target.value)}
-                    placeholder="Describe your responsibilities and achievements..."
-                    rows={3}
-                    disabled={isLoading}
-                    required
-                  />
-                </div>
+                )}
               </div>
             ))}
-
             <Button type="button" onClick={addExperience} variant="outline" disabled={isLoading}>
               <Plus className="h-4 w-4 mr-2" />
               Add Experience
@@ -502,103 +507,116 @@ export function UserProfileForm({ profile, onSuccess }: UserProfileFormProps) {
             <CardDescription>Your notable projects and accomplishments</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            {projects.length === 0 && <div className="text-muted-foreground">No projects added yet.</div>}
             {projects.map((project, index) => (
-              <div key={project.id} className="p-4 border rounded-lg space-y-4">
-                <div className="flex justify-between items-center">
-                  <h4 className="font-medium">Project #{index + 1}</h4>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => removeProject(project.id)}
-                    disabled={isLoading}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Project Title *</Label>
-                  <Input
-                    value={project.title}
-                    onChange={(e) => updateProject(project.id, "title", e.target.value)}
-                    placeholder="Project name"
-                    disabled={isLoading}
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Description *</Label>
-                  <Textarea
-                    value={project.description}
-                    onChange={(e) => updateProject(project.id, "description", e.target.value)}
-                    placeholder="Describe the project and your role..."
-                    rows={3}
-                    disabled={isLoading}
-                    required
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Start Date</Label>
-                    <Input
-                      type="month"
-                      value={project.start_date}
-                      onChange={(e) => updateProject(project.id, "start_date", e.target.value)}
-                      disabled={isLoading}
-                    />
+              <div key={project.id} className="p-4 border rounded-lg space-y-2 bg-muted/10">
+                {editingProjectId === project.id ? (
+                  <div>
+                    <div className="space-y-2">
+                      <Label>Project Title *</Label>
+                      <Input
+                        value={project.title}
+                        onChange={(e) => updateProject(project.id, "title", e.target.value)}
+                        placeholder="Project name"
+                        disabled={isLoading}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Description *</Label>
+                      <Textarea
+                        value={project.description}
+                        onChange={(e) => updateProject(project.id, "description", e.target.value)}
+                        placeholder="Describe the project and your role..."
+                        rows={3}
+                        disabled={isLoading}
+                        required
+                      />
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Start Date</Label>
+                        <Input
+                          type="month"
+                          value={project.start_date}
+                          onChange={(e) => updateProject(project.id, "start_date", e.target.value)}
+                          disabled={isLoading || project.is_ongoing}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>End Date (Optional)</Label>
+                        <Input
+                          type="month"
+                          value={project.end_date}
+                          onChange={(e) => updateProject(project.id, "end_date", e.target.value)}
+                          disabled={isLoading || project.is_ongoing}
+                        />
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id={`ongoing-${project.id}`}
+                        checked={!!project.is_ongoing}
+                        onChange={(e) => updateProject(project.id, "is_ongoing", e.target.checked)}
+                        disabled={isLoading}
+                      />
+                      <Label htmlFor={`ongoing-${project.id}`}>Ongoing</Label>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Project URL (Optional)</Label>
+                        <Input
+                          type="url"
+                          value={project.url || ""}
+                          onChange={(e) => updateProject(project.id, "url", e.target.value)}
+                          placeholder="https://project-demo.com"
+                          disabled={isLoading}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>GitHub URL (Optional)</Label>
+                        <Input
+                          type="url"
+                          value={project.github_url || ""}
+                          onChange={(e) => updateProject(project.id, "github_url", e.target.value)}
+                          placeholder="https://github.com/user/project"
+                          disabled={isLoading}
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Technologies Used</Label>
+                      <Input
+                        value={project.technologies.join(", ")}
+                        onChange={(e) =>
+                          updateProject(project.id, "technologies", e.target.value.split(", ").filter(Boolean))
+                        }
+                        placeholder="React, Node.js, PostgreSQL, etc."
+                        disabled={isLoading}
+                      />
+                      <p className="text-sm text-muted-foreground">Separate technologies with commas</p>
+                    </div>
+                    <Button type="button" onClick={() => setEditingProjectId(null)} variant="secondary" className="mt-2">Done</Button>
                   </div>
-                  <div className="space-y-2">
-                    <Label>End Date (Optional)</Label>
-                    <Input
-                      type="month"
-                      value={project.end_date || ""}
-                      onChange={(e) => updateProject(project.id, "end_date", e.target.value)}
-                      disabled={isLoading}
-                    />
+                ) : (
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <div className="font-medium">{project.title}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {project.is_ongoing
+                          ? "Ongoing"
+                          : `${formatMonthYear(project.start_date)} - ${formatMonthYear(project.end_date)}`}
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button type="button" size="sm" variant="outline" onClick={() => setEditingProjectId(project.id)}>Edit</Button>
+                      <Button type="button" size="sm" variant="ghost" onClick={() => removeProject(project.id)} disabled={isLoading}><Trash2 className="h-4 w-4" /></Button>
+                    </div>
                   </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Project URL (Optional)</Label>
-                    <Input
-                      type="url"
-                      value={project.url || ""}
-                      onChange={(e) => updateProject(project.id, "url", e.target.value)}
-                      placeholder="https://project-demo.com"
-                      disabled={isLoading}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>GitHub URL (Optional)</Label>
-                    <Input
-                      type="url"
-                      value={project.github_url || ""}
-                      onChange={(e) => updateProject(project.id, "github_url", e.target.value)}
-                      placeholder="https://github.com/user/project"
-                      disabled={isLoading}
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Technologies Used</Label>
-                  <Input
-                    value={project.technologies.join(", ")}
-                    onChange={(e) =>
-                      updateProject(project.id, "technologies", e.target.value.split(", ").filter(Boolean))
-                    }
-                    placeholder="React, Node.js, PostgreSQL, etc."
-                    disabled={isLoading}
-                  />
-                  <p className="text-sm text-muted-foreground">Separate technologies with commas</p>
-                </div>
+                )}
               </div>
             ))}
-
             <Button type="button" onClick={addProject} variant="outline" disabled={isLoading}>
               <Plus className="h-4 w-4 mr-2" />
               Add Project
