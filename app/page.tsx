@@ -40,7 +40,7 @@ export default async function Home() {
             </p>
           </div>
 
-          <div className="bg-card rounded-xl shadow-md border p-8">
+          <div className="bg-card rounded-xl shadow-md border-brand p-8">
             <JobUrlForm userProfile={userProfile} />
           </div>
         </div>

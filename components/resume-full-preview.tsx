@@ -284,27 +284,6 @@ export function ResumeFullPreview({
               Start Over
             </Button>
           )}
-          {onGenerateCoverLetter && (
-            <Button
-              onClick={() => {
-                console.log("🔍 Passing application ID to cover letter:", resume.applicationId)
-                onGenerateCoverLetter()
-              }}
-              disabled={isGeneratingCoverLetter || isExporting}
-              className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white"
-            >
-              {isGeneratingCoverLetter ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" /> Generating...
-                </>
-              ) : (
-                <>
-                  <Mail className="h-4 w-4" />
-                  Generate Cover Letter
-                </>
-              )}
-            </Button>
-          )}
         </div>
 
         <div className="flex gap-2">
@@ -312,22 +291,22 @@ export function ResumeFullPreview({
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
-                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white"
+                className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white"
                 disabled={isExporting}
               >
-                {isExporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-                Download & Save
-                <ChevronDown className="h-4 w-4" />
+                {isExporting ? <Loader2 className="h-4 w-4 animate-spin text-white" /> : <Download className="h-4 w-4 text-white" />}
+                Download
+                <ChevronDown className="h-4 w-4 text-white" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={handleDownloadDOCX} disabled={isExporting}>
                 <Download className="h-4 w-4 mr-2" />
-                Download as DOCX
+                DOCX
               </DropdownMenuItem>
               <DropdownMenuItem onClick={handleDownloadPDF} disabled={isExporting}>
                 <Download className="h-4 w-4 mr-2" />
-                Download as PDF
+                PDF
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

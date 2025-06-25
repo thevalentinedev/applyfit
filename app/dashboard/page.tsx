@@ -20,6 +20,8 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { Header } from "@/components/header"
+import { useEffect, useState } from "react"
+import ApplicationsSection from "@/components/dashboard/ApplicationsSection"
 
 async function DashboardStats() {
   const stats = await getJobApplicationStats()
@@ -155,7 +157,7 @@ async function ProfileSummary() {
             <div>
               <p className="text-sm font-medium mb-2">Skills</p>
               <div className="flex flex-wrap gap-1">
-                {profile.skills.slice(0, 5).map((skill) => (
+                {profile.skills.slice(0, 5).map((skill: string) => (
                   <Badge key={skill} variant="outline" className="text-xs">
                     {skill}
                   </Badge>
@@ -205,8 +207,6 @@ export default async function DashboardPage() {
     )
   }
 
-  const applications = await getJobApplications()
-
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -225,13 +225,7 @@ export default async function DashboardPage() {
           </div>
 
           {/* Applications Table */}
-          <div>
-            <h2 className="text-xl font-heading font-semibold mb-4 flex items-center gap-2">
-              <FileText className="h-5 w-5" />
-              Job Applications
-            </h2>
-            <JobApplicationsTable applications={applications || []} />
-          </div>
+          <ApplicationsSection />
         </div>
       </main>
     </div>

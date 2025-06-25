@@ -381,7 +381,7 @@ export function EditableResumePreview({
           experienceArray.map(async (exp) => {
             if (exp.bullets && Array.isArray(exp.bullets)) {
               const improvedBullets = await Promise.all(
-                exp.bullets.map((bullet) =>
+                exp.bullets.map((bullet: string) =>
                   refineResumeSection("experience", bullet, jobDescription, jobTitle, companyName, useGpt4),
                 ),
               )
@@ -478,7 +478,6 @@ ${userName}`
         const updatedCoverLetter = {
           ...generatedCoverLetter,
           location: currentResume?.location || "Remote",
-          content: formattedCoverLetter, // Add the formatted content
           applicationId: applicationId, // Add the application ID
         }
 
@@ -503,7 +502,6 @@ ${userName}`
             // Only save serializable cover letter data
             const serializableCoverLetter = {
               success: updatedCoverLetter.success,
-              content: updatedCoverLetter.content,
               location: updatedCoverLetter.location,
               toneUsed: updatedCoverLetter.toneUsed,
               error: updatedCoverLetter.error,
@@ -549,28 +547,43 @@ ${userName}`
   }
 
   if (showCoverLetter && coverLetter) {
+    // Reconstruct the cover letter content string from the coverLetter object
+    const coverLetterContent = [
+      coverLetter.greeting,
+      '',
+      coverLetter.body?.hook,
+      '',
+      coverLetter.body?.skills,
+      '',
+      coverLetter.body?.culture,
+      '',
+      coverLetter.body?.closing,
+      '',
+      'Sincerely,',
+      coverLetter.full_name || ''
+    ].filter(Boolean).join('\n\n')
     return (
       <EditableCoverLetterPreview
-        coverLetterContent={coverLetter.content || ""} // Use the already generated content
-        userProfile={userProfile} // CRITICAL: Pass the actual userProfile here
+        coverLetterContent={coverLetterContent}
+        userProfile={userProfile}
         jobDetails={{
           title: jobTitle,
           company: companyName,
           description: jobDescription,
-          applicationId: coverLetter.applicationId, // Pass the application ID
+          applicationId: coverLetter.applicationId,
         }}
         resumeData={{
           summary: currentResume?.summary || "",
           skills: safeGetSkills(currentResume?.skills),
           experience: safeGetArray(currentResume?.experience),
           projects: safeGetArray(currentResume?.projects),
-          applicationId: coverLetter.applicationId, // Also pass it in resumeData
+          applicationId: coverLetter.applicationId,
         }}
         onContentChange={(content) => {
-          if (coverLetter) {
-            setCoverLetter({ ...coverLetter, content })
-          }
+          /* Optionally, update a local state or ignore if not needed */
         }}
+        onBack={onBack}
+        onStartOver={onStartOver}
       />
     )
   }
@@ -580,35 +593,16 @@ ${userName}`
       <ResumeFullPreview
         resume={currentResume}
         userProfile={{
-          // CRITICAL: Pass actual user profile data with proper mapping
-          name: userName,
           full_name: userName,
           email: userEmail,
           phone: userPhone,
           location: currentResume.location || userProfile?.location || "Remote",
-          portfolio: userWebsite,
           website: userWebsite,
-          linkedin: userLinkedIn,
           linkedin_url: userLinkedIn,
-          github: userGitHub,
           github_url: userGitHub,
           education: userProfile?.education || [],
           professional_experience: userProfile?.professional_experience || [],
           projects_achievements: userProfile?.projects_achievements || [],
-          currentRole: jobTitle,
-          experience:
-            userProfile?.experience ||
-            userProfile?.professional_experience
-              ?.map(
-                (exp) =>
-                  `${exp.position} at ${exp.company} (${exp.start_date} - ${exp.end_date || "Present"}): ${exp.description}`,
-              )
-              .join("; ") ||
-            "Experience not provided",
-          projects:
-            userProfile?.projects ||
-            userProfile?.projects_achievements?.map((proj) => `${proj.title}: ${proj.description}`).join("; ") ||
-            "Projects not provided",
         }}
         jobDetails={{
           jobTitle,
@@ -667,7 +661,7 @@ ${userName}`
       {/* ATS Score - Compact Display */}
       {atsScore && (
         <ATSScoreCompact
-          score={atsScore}
+          score={atsScore as any}
           suggestions={[]}
           onRegenerateSection={handleRegenerateSection}
           isOptimizing={isOptimizing}
@@ -732,9 +726,9 @@ ${userName}`
                     </div>
                     {exp?.bullets && Array.isArray(exp.bullets) ? (
                       <ul className="space-y-2">
-                        {exp.bullets.map((bullet, bulletIndex) => (
+                        {exp.bullets.map((bullet: string, bulletIndex: number) => (
                           <li key={bulletIndex} className="text-sm text-gray-700 flex items-start">
-                            <span className="text-blue-500 mr-2 mt-1">•</span>
+                            <span className="text-blue-500 mr-2">•</span>
                             <div className="flex-1">
                               <EditableSection
                                 content={bullet || ""}
@@ -780,9 +774,9 @@ ${userName}`
                     </div>
                     {project?.bullets && Array.isArray(project.bullets) ? (
                       <ul className="space-y-2">
-                        {project.bullets.map((bullet, bulletIndex) => (
+                        {project.bullets.map((bullet: string, bulletIndex: number) => (
                           <li key={bulletIndex} className="text-sm text-gray-700 flex items-start">
-                            <span className="text-green-500 mr-2 mt-1">•</span>
+                            <span className="text-green-500 mr-2">•</span>
                             <div className="flex-1">
                               <EditableSection
                                 content={bullet || ""}
@@ -824,15 +818,16 @@ ${userName}`
         <Button
           onClick={() => handleGenerateCoverLetter()}
           disabled={isGeneratingCoverLetter}
-          className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white"
+          className="flex items-center gap-2 border-green-600 text-green-700 bg-transparent hover:bg-green-50 border-2"
+          variant="outline"
         >
           {isGeneratingCoverLetter ? (
             <>
-              <Loader2 className="h-4 w-4 animate-spin" /> Generating...
+              <Loader2 className="h-4 w-4 animate-spin text-green-700" /> Generating...
             </>
           ) : (
             <>
-              <Mail className="h-4 w-4" />
+              <Mail className="h-4 w-4 text-green-700" />
               Generate Cover Letter
             </>
           )}
@@ -840,9 +835,9 @@ ${userName}`
 
         <Button
           onClick={() => setShowFullResumePreview(true)}
-          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white"
+          className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white"
         >
-          <Eye className="h-4 w-4" />
+          <Eye className="h-4 w-4 text-white" />
           Preview & Export
         </Button>
       </div>

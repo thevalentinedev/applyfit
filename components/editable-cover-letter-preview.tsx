@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import { generateCoverLetter } from "@/app/actions/generate-cover-letter"
@@ -8,6 +8,8 @@ import { Loader2, Sparkles, Download, FileText, Edit3 } from "lucide-react"
 import { exportCoverLetterToPDF, exportCoverLetterToDocx } from "@/lib/docx-export-with-blob"
 import { CoverLetterRevisionPanel } from "./cover-letter-revision-panel"
 import { analyzeCoverLetterForRevisions, type RevisionSuggestion } from "@/lib/cover-letter-analyzer"
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu"
+import { useRouter } from "next/navigation"
 
 interface EditableCoverLetterPreviewProps {
   coverLetterContent: string
@@ -22,6 +24,8 @@ interface EditableCoverLetterPreviewProps {
   }
   resumeData?: any
   onContentChange: (content: string) => void
+  onBack?: () => void
+  onStartOver?: () => void
 }
 
 export function EditableCoverLetterPreview({
@@ -30,6 +34,8 @@ export function EditableCoverLetterPreview({
   jobDetails = { title: "", company: "", description: "", url: "" },
   resumeData,
   onContentChange,
+  onBack,
+  onStartOver,
 }: EditableCoverLetterPreviewProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [editedContent, setEditedContent] = useState(coverLetterContent)
@@ -37,6 +43,9 @@ export function EditableCoverLetterPreview({
   const [isDownloading, setIsDownloading] = useState(false)
   const [revisionSuggestions, setRevisionSuggestions] = useState<RevisionSuggestion[]>([])
   const [isRevising, setIsRevising] = useState(false)
+  const [showOverlay, setShowOverlay] = useState(false)
+  const contentRef = useRef<HTMLDivElement>(null)
+  const router = useRouter()
 
   // Safely access jobDetails with fallbacks
   const safeJobDetails = {
@@ -250,8 +259,64 @@ ${userProfile?.full_name || "Your Name"}`
     }
   }
 
+  // Handler for double-click to edit
+  const handleDoubleClick = () => {
+    setIsEditing(true)
+  }
+
+  // Handler for mouse enter/leave to show overlay
+  const handleMouseEnter = () => setShowOverlay(true)
+  const handleMouseLeave = () => setShowOverlay(false)
+
   return (
     <div className="space-y-6">
+      {/* Action Buttons - Back, Start Over, Download (top) */}
+      <div className="mb-6 flex flex-wrap gap-3 items-center justify-between">
+        <div className="flex gap-2">
+          {onBack && (
+            <Button variant="outline" onClick={onBack} className="flex items-center gap-2">
+              ← Back
+            </Button>
+          )}
+          {onStartOver && (
+            <Button
+              variant="outline"
+              onClick={() => {
+                if (typeof onStartOver === "function") {
+                  onStartOver()
+                } else {
+                  router.push("/")
+                }
+              }}
+              className="flex items-center gap-2 text-red-600 border-red-300 hover:bg-red-50"
+            >
+              Start Over
+            </Button>
+          )}
+        </div>
+        <div className="flex gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                className="flex items-center gap-2 border-brand-dark text-brand-dark hover:bg-brand-light"
+                disabled={isDownloading}
+              >
+                {isDownloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                Download
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={handleDownloadPDF} disabled={isDownloading}>
+                PDF
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleDownloadDOCX} disabled={isDownloading}>
+                DOCX
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
       {/* Revision Suggestions Panel */}
       {revisionSuggestions.length > 0 && (
         <CoverLetterRevisionPanel
@@ -260,109 +325,71 @@ ${userProfile?.full_name || "Your Name"}`
           isRevising={isRevising}
         />
       )}
-
       {/* Main Cover Letter Preview */}
       <div className="border rounded-md p-6 shadow-md bg-white max-w-4xl mx-auto">
-        {/* Header with real user info */}
-        <div className="mb-8 pb-4 border-b">
-          <div className="text-lg font-semibold">{userProfile?.full_name || "Your Name"}</div>
-          <div className="text-sm text-gray-600 mt-1">{userProfile?.email || "your.email@example.com"}</div>
-          <div className="text-sm text-gray-600">{userProfile?.phone || "Your Phone"}</div>
-          {userProfile?.website && <div className="text-sm text-gray-600">{userProfile.website}</div>}
-          {userProfile?.linkedin_url && <div className="text-sm text-gray-600">{userProfile.linkedin_url}</div>}
-          {userProfile?.github_url && <div className="text-sm text-gray-600">{userProfile.github_url}</div>}
-          {/* FIXED: Show job location correctly */}
-          <div className="text-sm text-gray-600">{safeJobDetails.location || userProfile?.location || "Remote"}</div>
-        </div>
-
-        {/* Date and Job Info */}
-        <div className="mb-6 text-sm text-gray-600">
-          <div className="mb-2">{currentDate}</div>
-          {safeJobDetails.company !== "Company" && safeJobDetails.title !== "Position" && (
-            <div className="font-medium text-gray-800">
-              {safeJobDetails.company} - {safeJobDetails.title}
-            </div>
-          )}
-        </div>
-
-        {/* Action Buttons */}
-        <div className="mb-6 flex flex-wrap gap-3">
-          <Button onClick={() => setIsEditing(!isEditing)} variant="outline" className="flex items-center gap-2">
-            <Edit3 className="w-4 h-4" />
-            {isEditing ? "Cancel Edit" : "Edit Manually"}
-          </Button>
-
-          <Button
-            onClick={handleRegenerateCoverLetter}
-            disabled={isRegenerating || isRevising}
-            variant="outline"
-            className="flex items-center gap-2 border-blue-200 text-blue-700 hover:bg-blue-50"
+        {/* Overlay Edit/Regenerate Buttons */}
+        <div
+          className="relative"
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
+        >
+          <div
+            ref={contentRef}
+            onDoubleClick={handleDoubleClick}
+            className="min-h-[350px]"
+            style={{ cursor: isEditing ? 'text' : 'pointer' }}
           >
-            {isRegenerating ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Regenerating...
-              </>
-            ) : (
-              <>
-                <Sparkles className="w-4 h-4" />
-                Regenerate with AI
-              </>
+            {/* Overlay buttons (top right) */}
+            {showOverlay && !isEditing && (
+              <div className="absolute top-2 right-2 flex gap-2 z-10">
+                <Button
+                  size="icon"
+                  variant="outline"
+                  className="shadow bg-white/80 hover:bg-brand-light border border-brand"
+                  onClick={() => setIsEditing(true)}
+                  title="Edit Manually"
+                >
+                  <Edit3 className="w-4 h-4 text-brand" />
+                </Button>
+                <Button
+                  size="icon"
+                  variant="outline"
+                  className="shadow bg-white/80 hover:bg-brand-light border border-brand"
+                  onClick={handleRegenerateCoverLetter}
+                  title="Regenerate with AI"
+                  disabled={isRegenerating || isRevising}
+                >
+                  {isRegenerating ? <Loader2 className="w-4 h-4 animate-spin text-brand" /> : <Sparkles className="w-4 h-4 text-brand" />}
+                </Button>
+              </div>
             )}
-          </Button>
-
-          <Button
-            onClick={handleDownloadPDF}
-            disabled={isDownloading}
-            variant="outline"
-            className="border-red-200 text-red-700 hover:bg-red-50"
-          >
-            {isDownloading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <FileText className="w-4 h-4 mr-2" />}
-            Download PDF
-          </Button>
-
-          <Button
-            onClick={handleDownloadDOCX}
-            disabled={isDownloading}
-            variant="outline"
-            className="border-blue-200 text-blue-700 hover:bg-blue-50"
-          >
-            {isDownloading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
-            Download DOCX
-          </Button>
-        </div>
-
-        {/* Editable content area */}
-        <div className="min-h-[400px]">
-          {isEditing ? (
-            <div className="space-y-4">
-              <div className="flex gap-2 p-2 border-b items-center justify-between">
-                <span className="text-sm font-medium text-gray-700">Edit Cover Letter:</span>
+            {isEditing ? (
+              <div className="space-y-4">
+                <div className="flex gap-2 p-2 border-b items-center justify-between">
+                  <span className="text-sm font-medium text-gray-700">Edit Cover Letter:</span>
+                </div>
+                <Textarea
+                  value={editedContent}
+                  onChange={(e) => setEditedContent(e.target.value)}
+                  className="min-h-[350px] resize-none font-serif text-sm leading-relaxed"
+                  placeholder="Your cover letter content will appear here..."
+                />
+                <div className="flex gap-2">
+                  <Button onClick={handleSave} size="sm" className="bg-brand hover:bg-brand-dark">
+                    Save Changes
+                  </Button>
+                  <Button onClick={handleCancel} size="sm" variant="outline">
+                    Cancel
+                  </Button>
+                </div>
               </div>
-              <Textarea
-                value={editedContent}
-                onChange={(e) => setEditedContent(e.target.value)}
-                className="min-h-[350px] resize-none font-serif text-sm leading-relaxed"
-                placeholder="Your cover letter content will appear here..."
-              />
-              <div className="flex gap-2">
-                <Button onClick={handleSave} size="sm" className="bg-green-600 hover:bg-green-700">
-                  Save Changes
-                </Button>
-                <Button onClick={handleCancel} size="sm" variant="outline">
-                  Cancel
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <div className="min-h-[350px]">
+            ) : (
               <div className="whitespace-pre-line font-serif text-sm leading-relaxed">
                 {coverLetterContent || "No cover letter content available."}
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
-
         {/* Footer signature */}
         <div className="mt-8 pt-4 border-t">
           <div className="font-serif text-sm">Best regards,</div>

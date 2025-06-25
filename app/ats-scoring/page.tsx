@@ -145,14 +145,14 @@ export default function ATSScoringPage() {
           </div>
 
           {/* CTA Section */}
-          <div className="text-center mt-12 p-8 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl text-white">
+          <div className="text-center mt-12 p-8 bg-gradient-to-r from-green-500 to-green-600 rounded-xl text-white">
             <h2 className="text-2xl font-heading font-bold mb-4">Ready to Optimize Your Resume?</h2>
-            <p className="text-blue-100 mb-6 max-w-2xl mx-auto">
+            <p className="text-green-100 mb-6 max-w-2xl mx-auto">
               Join thousands of job seekers who have improved their ATS compatibility and landed more interviews with
               our advanced scoring system.
             </p>
             <Link href="/dashboard">
-              <Button size="lg" variant="secondary" className="gap-2">
+              <Button size="lg" variant="secondary" className="gap-2 bg-white text-green-700 hover:bg-green-50 border-none">
                 Start ATS Optimization
                 <ArrowRight className="h-4 w-4" />
               </Button>

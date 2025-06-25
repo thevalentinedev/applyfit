@@ -71,20 +71,20 @@ export function CachedSessions({ currentJobUrl, onLoadSession, onClearCache }: C
     <div className="space-y-4">
       {/* Matching Session Alert */}
       {matchingSession && (
-        <Card className="border-blue-200 bg-blue-50">
+        <Card className="border-green-300 bg-green-50">
           <CardHeader className="pb-3">
             <div className="flex items-center gap-2">
-              <Zap className="h-5 w-5 text-blue-600" />
-              <CardTitle className="text-blue-800 text-lg">Previous Work Found!</CardTitle>
+              <Zap className="h-5 w-5 text-green-600" />
+              <CardTitle className="text-green-800 text-lg font-semibold">Previous Work Found!</CardTitle>
             </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
               <div>
-                <p className="text-blue-700 text-sm mb-2">
+                <p className="text-green-800 text-sm mb-2">
                   You've already generated content for this job. Load your previous work to save time and API costs.
                 </p>
-                <div className="flex items-center gap-4 text-xs text-blue-600">
+                <div className="flex items-center gap-4 text-xs text-green-700">
                   <div className="flex items-center gap-1">
                     <Building className="h-3 w-3" />
                     {matchingSession.jobDetails.companyName}
@@ -100,10 +100,10 @@ export function CachedSessions({ currentJobUrl, onLoadSession, onClearCache }: C
                   )}
                 </div>
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 mt-2">
                 <Button
                   onClick={() => handleLoadSession(matchingSession)}
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                  className="bg-green-600 hover:bg-green-700 text-white font-semibold shadow"
                   size="sm"
                 >
                   Load Previous Work
@@ -112,7 +112,7 @@ export function CachedSessions({ currentJobUrl, onLoadSession, onClearCache }: C
                   onClick={() => handleDeleteSession(matchingSession.id)}
                   variant="outline"
                   size="sm"
-                  className="text-blue-600 border-blue-300"
+                  className="border-green-600 text-green-700 hover:bg-green-100"
                 >
                   Start Fresh
                 </Button>

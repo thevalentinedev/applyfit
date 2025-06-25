@@ -166,6 +166,9 @@ export function JobUrlForm({ userProfile }: JobUrlFormProps) {
         },
         experience: draft.experience || [],
         projects: draft.projects || [],
+        full_name: userProfile?.full_name || "",
+        email: userProfile?.email || "",
+        phone: userProfile?.phone || "",
         success: true,
       }
       setGeneratedResume(restoredResume)
@@ -500,7 +503,7 @@ export function JobUrlForm({ userProfile }: JobUrlFormProps) {
   if (currentStep === "generating") {
     return (
       <div className="min-h-[400px] flex flex-col items-center justify-center space-y-6">
-        <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+        <div className="w-16 h-16 border-4 border-green-300 border-t-green-600 rounded-full animate-spin"></div>
         <div className="text-center space-y-2">
           <h3 className="text-xl font-semibold text-gray-900">Generating Your Resume</h3>
           <p className="text-gray-600">
@@ -545,9 +548,9 @@ export function JobUrlForm({ userProfile }: JobUrlFormProps) {
 
       {/* Profile Completion Warning */}
       {!userProfile ? (
-        <Alert className="border-blue-200 bg-blue-50">
-          <AlertCircle className="h-4 w-4 text-blue-600" />
-          <AlertDescription className="text-blue-800">
+        <Alert className="border-brand-200 bg-brand-50">
+          <AlertCircle className="h-4 w-4 text-brand-600" />
+          <AlertDescription className="text-brand-800">
             <div className="flex items-center justify-between">
               <div>
                 <strong>Sign in required!</strong> You need to sign in and create a profile to generate personalized
@@ -557,7 +560,7 @@ export function JobUrlForm({ userProfile }: JobUrlFormProps) {
                 variant="outline"
                 size="sm"
                 onClick={() => (window.location.href = "/auth/login")}
-                className="text-blue-600 border-blue-300 hover:bg-blue-100 ml-4"
+                className="text-brand-600 border-brand-300 hover:bg-brand-100 ml-4"
               >
                 Sign In
               </Button>
@@ -587,9 +590,9 @@ export function JobUrlForm({ userProfile }: JobUrlFormProps) {
 
       {/* Duplicate Detection Alert */}
       {duplicateCheck?.isDuplicate && duplicateCheck.cachedSession && (
-        <Alert className="border-blue-200 bg-blue-50">
-          <Clock className="h-4 w-4 text-blue-600" />
-          <AlertDescription className="text-blue-800">
+        <Alert className="border-brand-200 bg-brand-50">
+          <Clock className="h-4 w-4 text-brand-600" />
+          <AlertDescription className="text-brand-800">
             <div className="flex items-center justify-between">
               <div>
                 <strong>Similar job found!</strong> You already have a resume for this job description from{" "}
@@ -600,7 +603,7 @@ export function JobUrlForm({ userProfile }: JobUrlFormProps) {
                   variant="outline"
                   size="sm"
                   onClick={() => handleLoadCachedSession(duplicateCheck.cachedSession!)}
-                  className="text-blue-600 border-blue-300 hover:bg-blue-100"
+                  className="text-brand-600 border-brand-300 hover:bg-brand-100"
                 >
                   Load Previous
                 </Button>
@@ -669,7 +672,7 @@ export function JobUrlForm({ userProfile }: JobUrlFormProps) {
                 <button
                   type="button"
                   onClick={() => setShowManualInput(true)}
-                  className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
+                  className="text-sm text-brand-600 hover:text-brand-800 hover:underline"
                 >
                   Paste manually instead
                 </button>
@@ -695,10 +698,10 @@ export function JobUrlForm({ userProfile }: JobUrlFormProps) {
               {!jobAnalyzed && (
                 <Button
                   type="submit"
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                  className="w-full bg-brand hover:bg-brand-dark text-white"
                   disabled={isValidating || isParsing || !jobUrl}
                 >
-                  {isParsing ? "Extracting Job Details..." : isValidating ? "Analyzing..." : "Analyze Job"}
+                  Analyze Job
                 </Button>
               )}
             </form>
@@ -713,7 +716,7 @@ export function JobUrlForm({ userProfile }: JobUrlFormProps) {
                 <button
                   type="button"
                   onClick={() => setShowManualInput(false)}
-                  className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
+                  className="text-sm text-brand-600 hover:text-brand-800 hover:underline"
                 >
                   Use job URL instead
                 </button>
@@ -729,7 +732,7 @@ export function JobUrlForm({ userProfile }: JobUrlFormProps) {
               {!jobAnalyzed && (
                 <Button
                   onClick={handleManualJobSubmit}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                  className="w-full bg-brand hover:bg-brand-dark text-white"
                   disabled={!manualJobDescription.trim()}
                 >
                   Process Job Description
@@ -776,7 +779,7 @@ export function JobUrlForm({ userProfile }: JobUrlFormProps) {
 
       {/* Profile Preview Modal */}
       {showProfilePreview && userProfile && (
-        <UserProfilePreview userProfile={userProfile} onClose={() => setShowProfilePreview(false)} />
+        <UserProfilePreview profile={userProfile} />
       )}
 
       {/* Job Preview Modal */}

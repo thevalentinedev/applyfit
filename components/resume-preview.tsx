@@ -4,7 +4,7 @@ import { useState } from "react"
 import type { GeneratedResume } from "@/app/actions/generate-resume"
 import type { GeneratedCoverLetter } from "@/app/actions/generate-cover-letter"
 import { Button } from "@/components/ui/button"
-import { CoverLetterPreview } from "./cover-letter-preview"
+import CoverLetterPreview from "./cover-letter-preview"
 import { generateCoverLetter } from "@/app/actions/generate-cover-letter"
 import { useToast } from "@/hooks/use-toast"
 import { Loader2 } from "lucide-react"
@@ -98,13 +98,16 @@ export function ResumePreview({
   if (showCoverLetter && coverLetter) {
     return (
       <CoverLetterPreview
-        coverLetter={coverLetter}
-        onRegenerate={handleRegenerateCoverLetter}
-        isRegenerating={isGeneratingCoverLetter}
-        onBack={() => setShowCoverLetter(false)}
-        toneAnalysis={toneAnalysis}
-        selectedTone={selectedTone}
-        onToneChange={setSelectedTone}
+        coverLetterContent={coverLetter.body ? `${coverLetter.greeting}
+
+${coverLetter.body.hook}
+
+${coverLetter.body.skills}
+
+${coverLetter.body.culture}
+
+${coverLetter.body.closing}` : ''}
+        userProfile={coverLetter}
       />
     )
   }
@@ -217,7 +220,7 @@ export function ResumePreview({
               {showToneSelector ? "Hide" : "Customize"} Tone
             </Button>
           </div>
-          <Button onClick={onPreviewResume} className="bg-[#3B82F6] hover:bg-blue-600 text-white px-6">
+          <Button onClick={onPreviewResume} className="bg-brand hover:bg-brand-dark text-white px-6">
             Preview Resume →
           </Button>
         </div>
