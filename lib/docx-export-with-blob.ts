@@ -311,15 +311,22 @@ export async function exportResumeToDocx(
       resume.projects.forEach((project) => {
         let dateText = project.period
         if (typeof (project as any)?.is_ongoing !== "undefined") {
-          dateText = (project as any).is_ongoing
-            ? "Ongoing"
-            : `${formatMonthYear((project as any).start_date || "")} - ${formatMonthYear((project as any).end_date || "")}`
+          if ((project as any).is_ongoing) {
+            dateText = "Ongoing"
+          } else if ((project as any).start_date) {
+            dateText = formatMonthYear((project as any).start_date)
+            if ((project as any).end_date) {
+              dateText += ` - ${formatMonthYear((project as any).end_date)}`
+            }
+          } else {
+            dateText = ""
+          }
         }
         sections.push(
           new Paragraph({
             children: [
               new TextRun({ text: project.title, bold: true, size: 22 }),
-              new TextRun({ text: ` - ${dateText}`, size: 22 }),
+              new TextRun({ text: dateText ? ` - ${dateText}` : "", size: 22 }),
             ],
             spacing: { after: 100 },
           }),
@@ -563,11 +570,18 @@ export async function exportResumeToPDF(
       resume.projects.forEach((project) => {
         let dateText = project.period
         if (typeof (project as any)?.is_ongoing !== "undefined") {
-          dateText = (project as any).is_ongoing
-            ? "Ongoing"
-            : `${formatMonthYear((project as any).start_date || "")} - ${formatMonthYear((project as any).end_date || "")}`
+          if ((project as any).is_ongoing) {
+            dateText = "Ongoing"
+          } else if ((project as any).start_date) {
+            dateText = formatMonthYear((project as any).start_date)
+            if ((project as any).end_date) {
+              dateText += ` - ${formatMonthYear((project as any).end_date)}`
+            }
+          } else {
+            dateText = ""
+          }
         }
-        addText(`${project.title} - ${dateText}`, 11, true)
+        addText(`${project.title}${dateText ? ` - ${dateText}` : ""}`, 11, true)
         project.bullets?.forEach((bullet) => {
           addText(`• ${bullet}`, 11)
         })
