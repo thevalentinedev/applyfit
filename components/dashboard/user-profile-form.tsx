@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
 import { updateUserProfile } from "@/app/actions/update-profile"
-import { Loader2, Save, Plus, User, MapPin, Globe, Phone, Briefcase, GraduationCap, Award, Trash2 } from "lucide-react"
+import { Loader2, Save, Plus, User, MapPin, Globe, Phone, Briefcase, GraduationCap, Award, Trash2, ArrowDownAZ, ArrowUpZA } from "lucide-react"
 
 interface Education {
   id: string
@@ -70,6 +70,8 @@ export function UserProfileForm({ profile, onSuccess }: UserProfileFormProps) {
   const [editingEducationId, setEditingEducationId] = useState<string | null>(null)
   const [editingExperienceId, setEditingExperienceId] = useState<string | null>(null)
   const [editingProjectId, setEditingProjectId] = useState<string | null>(null)
+  const [educationOrder, setEducationOrder] = useState<'desc' | 'asc'>('desc')
+  const [experienceOrder, setExperienceOrder] = useState<'desc' | 'asc'>('desc')
 
   const handleSubmit = async (formData: FormData) => {
     setIsLoading(true)
@@ -173,6 +175,24 @@ export function UserProfileForm({ profile, onSuccess }: UserProfileFormProps) {
     const d = new Date(date)
     if (isNaN(d.getTime())) return date
     return d.toLocaleString("default", { month: "short", year: "numeric" })
+  }
+
+  // Sorting logic
+  const sortEducation = (order: 'desc' | 'asc') => {
+    setEducationOrder(order)
+    setEducation(education.slice().sort((a, b) => {
+      const aDate = new Date(a.end_date || a.start_date || 0).getTime()
+      const bDate = new Date(b.end_date || b.start_date || 0).getTime()
+      return order === 'desc' ? bDate - aDate : aDate - bDate
+    }))
+  }
+  const sortExperience = (order: 'desc' | 'asc') => {
+    setExperienceOrder(order)
+    setExperience(experience.slice().sort((a, b) => {
+      const aDate = new Date(a.end_date || a.start_date || 0).getTime()
+      const bDate = new Date(b.end_date || b.start_date || 0).getTime()
+      return order === 'desc' ? bDate - aDate : aDate - bDate
+    }))
   }
 
   return (
@@ -283,6 +303,14 @@ export function UserProfileForm({ profile, onSuccess }: UserProfileFormProps) {
             <CardTitle className="flex items-center gap-2">
               <GraduationCap className="h-5 w-5" />
               Education
+              <div className="ml-auto flex gap-2">
+                <Button type="button" size="icon" variant={educationOrder === 'desc' ? 'default' : 'outline'} onClick={() => sortEducation('desc')} title="Latest to Oldest" disabled={isLoading}>
+                  <ArrowDownAZ className="h-4 w-4" />
+                </Button>
+                <Button type="button" size="icon" variant={educationOrder === 'asc' ? 'default' : 'outline'} onClick={() => sortEducation('asc')} title="Oldest to Latest" disabled={isLoading}>
+                  <ArrowUpZA className="h-4 w-4" />
+                </Button>
+              </div>
             </CardTitle>
             <CardDescription>Your educational background</CardDescription>
           </CardHeader>
@@ -388,6 +416,14 @@ export function UserProfileForm({ profile, onSuccess }: UserProfileFormProps) {
             <CardTitle className="flex items-center gap-2">
               <Briefcase className="h-5 w-5" />
               Professional Experience
+              <div className="ml-auto flex gap-2">
+                <Button type="button" size="icon" variant={experienceOrder === 'desc' ? 'default' : 'outline'} onClick={() => sortExperience('desc')} title="Latest to Oldest" disabled={isLoading}>
+                  <ArrowDownAZ className="h-4 w-4" />
+                </Button>
+                <Button type="button" size="icon" variant={experienceOrder === 'asc' ? 'default' : 'outline'} onClick={() => sortExperience('asc')} title="Oldest to Latest" disabled={isLoading}>
+                  <ArrowUpZA className="h-4 w-4" />
+                </Button>
+              </div>
             </CardTitle>
             <CardDescription>Your work history and experience</CardDescription>
           </CardHeader>
