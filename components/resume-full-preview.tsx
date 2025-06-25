@@ -563,7 +563,10 @@ export function ResumeFullPreview({
                           {(project as any)?.is_ongoing !== undefined
                             ? ((project as any)?.is_ongoing
                                 ? "Ongoing"
-                                : `${formatMonthYear((project as any)?.start_date || "")} - ${formatMonthYear((project as any)?.end_date || "")}`)
+                                : ((project as any)?.start_date
+                                    ? formatMonthYear((project as any).start_date) +
+                                      ((project as any).end_date ? ` - ${formatMonthYear((project as any).end_date)}` : "")
+                                    : ""))
                             : project.period}
                         </span>
                       </div>
