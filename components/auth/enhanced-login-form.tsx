@@ -19,6 +19,7 @@ import {
   HelpCircle,
   Clock,
   Lock,
+  LogIn,
 } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
@@ -130,7 +131,7 @@ export function EnhancedLoginForm() {
             description: `Check your email at ${state.email} for the 6-digit code.`,
           })
         }
-      } else {
+      } else if (state.method === "magic-link") {
         // Magic link
         const { error } = await supabase.auth.signInWithOtp({
           email: state.email,
@@ -308,62 +309,78 @@ export function EnhancedLoginForm() {
     return `${minutes} minute${minutes > 1 ? "s" : ""} ago`
   }
 
+  const handleGoogleSignIn = async () => {
+    updateState({ status: "sending", error: null })
+    const { error } = await supabase.auth.signInWithOAuth({ provider: "google" })
+    if (error) {
+      updateState({
+        status: "error",
+        error: error.message,
+      })
+      toast({
+        title: "Google Sign In Failed",
+        description: error.message,
+        variant: "destructive",
+      })
+    }
+  }
+
   // Method Selection Step
   if (state.step === "method-selection") {
     return (
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-heading">Sign In</CardTitle>
-          <CardDescription>Choose your preferred authentication method</CardDescription>
+          <CardDescription>Sign in with Google or Magic Link</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="space-y-3">
-            <Button
-              onClick={() => handleMethodSelection("otp")}
-              className="w-full h-auto p-4 flex flex-col items-center space-y-2"
-              variant="outline"
-            >
-              <div className="flex items-center space-x-2">
-                <KeyRound className="h-5 w-5" />
-                <span className="font-medium">OTP Code</span>
-                <span className="text-xs bg-primary text-primary-foreground px-2 py-1 rounded">Recommended</span>
-              </div>
-              <p className="text-xs text-muted-foreground text-center">Get a 6-digit code sent to your email</p>
-            </Button>
-
-            <Button
-              onClick={() => handleMethodSelection("magic-link")}
-              className="w-full h-auto p-4 flex flex-col items-center space-y-2"
-              variant="outline"
-            >
-              <div className="flex items-center space-x-2">
-                <Mail className="h-5 w-5" />
-                <span className="font-medium">Magic Link</span>
-              </div>
-              <p className="text-xs text-muted-foreground text-center">
-                Click a link in your email to sign in instantly
-              </p>
-            </Button>
-
-            <Button
-              onClick={() => handleMethodSelection("password")}
-              className="w-full h-auto p-4 flex flex-col items-center space-y-2"
-              variant="outline"
-            >
-              <div className="flex items-center space-x-2">
-                <Lock className="h-5 w-5" />
-                <span className="font-medium">Password</span>
-                <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">Demo</span>
-              </div>
-              <p className="text-xs text-muted-foreground text-center">Sign in with email and password</p>
-            </Button>
+          <Button onClick={handleGoogleSignIn} className="w-full" disabled={state.status === "sending"}>
+            <LogIn className="mr-2 h-4 w-4" /> Sign in with Google
+          </Button>
+          <div className="relative flex items-center py-2">
+            <div className="flex-grow border-t border-muted-foreground/20" />
+            <span className="mx-2 text-xs text-muted-foreground">or</span>
+            <div className="flex-grow border-t border-muted-foreground/20" />
           </div>
+          <form onSubmit={handleEmailSubmit} className="space-y-4">
+            {state.error && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{state.error}</AlertDescription>
+              </Alert>
+            )}
 
-          <div className="text-center">
-            <p className="text-xs text-muted-foreground">
-              Both methods are secure and will create an account if you're new
-            </p>
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="email">Email Address</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="Enter your email address"
+                value={state.email}
+                onChange={(e) => updateState({ email: e.target.value })}
+                required
+                disabled={state.status === "sending"}
+                autoComplete="email"
+              />
+            </div>
+
+            <Button type="submit" className="w-full" disabled={state.status === "sending" || !state.email.trim()}>
+              {state.status === "sending" ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Sending Magic Link...
+                </>
+              ) : (
+                <>
+                  <Mail className="mr-2 h-4 w-4" />
+                  Send Magic Link
+                </>
+              )}
+            </Button>
+          </form>
+          {state.status === "sent" && (
+            <div className="text-green-600 text-sm text-center">Check your email for the magic link.</div>
+          )}
         </CardContent>
       </Card>
     )

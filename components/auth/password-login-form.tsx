@@ -87,18 +87,6 @@ export function PasswordLoginForm({ onBack }: { onBack: () => void }) {
             </Alert>
           )}
 
-          {/* Demo credentials notice */}
-          <Alert>
-            <User className="h-4 w-4" />
-            <AlertDescription>
-              <strong>Demo Credentials:</strong>
-              <br />
-              Email: demouser@gmail.com
-              <br />
-              Password: demouser
-            </AlertDescription>
-          </Alert>
-
           <div className="space-y-2">
             <Label htmlFor="email">Email Address</Label>
             <Input
