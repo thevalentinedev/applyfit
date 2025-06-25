@@ -8,7 +8,10 @@ import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
 import { updateUserProfile } from "@/app/actions/update-profile"
-import { Loader2, Save, Plus, User, MapPin, Globe, Phone, Briefcase, GraduationCap, Award, Trash2, ArrowDownAZ, ArrowUpZA } from "lucide-react"
+import { Loader2, Save, Plus, User, MapPin, Globe, Phone, Briefcase, GraduationCap, Award, Trash2, ArrowDownAZ, ArrowUpZA, GripVertical } from "lucide-react"
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { arrayMove, SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface Education {
   id: string
@@ -61,6 +64,34 @@ interface UserProfileFormProps {
   onSuccess?: () => void
 }
 
+// Drag handle component
+function DragHandle() {
+  return (
+    <span className="cursor-grab flex items-center pr-2 text-muted-foreground" title="Drag to reorder">
+      <GripVertical className="h-5 w-5" />
+    </span>
+  );
+}
+
+// Sortable item wrapper
+function SortableItem({ id, children }: { id: string; children: React.ReactNode }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.6 : 1,
+    zIndex: isDragging ? 10 : 'auto',
+  };
+  return (
+    <div ref={setNodeRef} style={style} {...attributes} className="relative">
+      <div {...listeners} className="absolute left-0 top-0 h-full flex items-center z-10">
+        <DragHandle />
+      </div>
+      <div className="pl-8">{children}</div>
+    </div>
+  );
+}
+
 export function UserProfileForm({ profile, onSuccess }: UserProfileFormProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [education, setEducation] = useState<Education[]>(profile.education || [])
@@ -70,8 +101,10 @@ export function UserProfileForm({ profile, onSuccess }: UserProfileFormProps) {
   const [editingEducationId, setEditingEducationId] = useState<string | null>(null)
   const [editingExperienceId, setEditingExperienceId] = useState<string | null>(null)
   const [editingProjectId, setEditingProjectId] = useState<string | null>(null)
-  const [educationOrder, setEducationOrder] = useState<'desc' | 'asc'>('desc')
-  const [experienceOrder, setExperienceOrder] = useState<'desc' | 'asc'>('desc')
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
+  );
 
   const handleSubmit = async (formData: FormData) => {
     setIsLoading(true)
@@ -177,22 +210,24 @@ export function UserProfileForm({ profile, onSuccess }: UserProfileFormProps) {
     return d.toLocaleString("default", { month: "short", year: "numeric" })
   }
 
-  // Sorting logic
-  const sortEducation = (order: 'desc' | 'asc') => {
-    setEducationOrder(order)
-    setEducation(education.slice().sort((a, b) => {
-      const aDate = new Date(a.end_date || a.start_date || 0).getTime()
-      const bDate = new Date(b.end_date || b.start_date || 0).getTime()
-      return order === 'desc' ? bDate - aDate : aDate - bDate
-    }))
+  // DnD handlers for education
+  function handleEducationDragEnd(event: any) {
+    const { active, over } = event;
+    if (active.id !== over?.id) {
+      const oldIndex = education.findIndex((edu) => edu.id === active.id);
+      const newIndex = education.findIndex((edu) => edu.id === over.id);
+      setEducation(arrayMove(education, oldIndex, newIndex));
+    }
   }
-  const sortExperience = (order: 'desc' | 'asc') => {
-    setExperienceOrder(order)
-    setExperience(experience.slice().sort((a, b) => {
-      const aDate = new Date(a.end_date || a.start_date || 0).getTime()
-      const bDate = new Date(b.end_date || b.start_date || 0).getTime()
-      return order === 'desc' ? bDate - aDate : aDate - bDate
-    }))
+
+  // DnD handlers for experience
+  function handleExperienceDragEnd(event: any) {
+    const { active, over } = event;
+    if (active.id !== over?.id) {
+      const oldIndex = experience.findIndex((exp) => exp.id === active.id);
+      const newIndex = experience.findIndex((exp) => exp.id === over.id);
+      setExperience(arrayMove(experience, oldIndex, newIndex));
+    }
   }
 
   return (
@@ -303,106 +338,104 @@ export function UserProfileForm({ profile, onSuccess }: UserProfileFormProps) {
             <CardTitle className="flex items-center gap-2">
               <GraduationCap className="h-5 w-5" />
               Education
-              <div className="ml-auto flex gap-2">
-                <Button type="button" size="icon" variant={educationOrder === 'desc' ? 'default' : 'outline'} onClick={() => sortEducation('desc')} title="Latest to Oldest" disabled={isLoading}>
-                  <ArrowDownAZ className="h-4 w-4" />
-                </Button>
-                <Button type="button" size="icon" variant={educationOrder === 'asc' ? 'default' : 'outline'} onClick={() => sortEducation('asc')} title="Oldest to Latest" disabled={isLoading}>
-                  <ArrowUpZA className="h-4 w-4" />
-                </Button>
-              </div>
             </CardTitle>
             <CardDescription>Your educational background</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {education.length === 0 && <div className="text-muted-foreground">No education added yet.</div>}
-            {education.map((edu, index) => (
-              <div key={edu.id} className="p-4 border rounded-lg space-y-2 bg-muted/10">
-                {editingEducationId === edu.id ? (
-                  <div>
-                  <div className="space-y-2">
-                    <Label>Institution *</Label>
-                    <Input
-                      value={edu.institution}
-                      onChange={(e) => updateEducation(edu.id, "institution", e.target.value)}
-                      placeholder="University/School name"
-                      disabled={isLoading}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Degree *</Label>
-                    <Input
-                      value={edu.degree}
-                      onChange={(e) => updateEducation(edu.id, "degree", e.target.value)}
-                      placeholder="Bachelor's, Master's, etc."
-                      disabled={isLoading}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Field of Study</Label>
-                    <Input
-                      value={edu.field_of_study}
-                      onChange={(e) => updateEducation(edu.id, "field_of_study", e.target.value)}
-                      placeholder="Computer Science, etc."
-                      disabled={isLoading}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Start Date</Label>
-                    <Input
-                      type="month"
-                      value={edu.start_date}
-                      onChange={(e) => updateEducation(edu.id, "start_date", e.target.value)}
-                      disabled={isLoading}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>End Date</Label>
-                    <Input
-                      type="month"
-                      value={edu.end_date}
-                      onChange={(e) => updateEducation(edu.id, "end_date", e.target.value)}
-                      disabled={isLoading}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>GPA (Optional)</Label>
-                    <Input
-                      value={edu.gpa || ""}
-                      onChange={(e) => updateEducation(edu.id, "gpa", e.target.value)}
-                      placeholder="3.8/4.0"
-                      disabled={isLoading}
-                    />
-                  </div>
-                <div className="space-y-2">
-                  <Label>Description (Optional)</Label>
-                  <Textarea
-                    value={edu.description || ""}
-                    onChange={(e) => updateEducation(edu.id, "description", e.target.value)}
-                    placeholder="Relevant coursework, achievements, etc."
-                    rows={2}
-                    disabled={isLoading}
-                  />
-                </div>
-                    <Button type="button" onClick={() => setEditingEducationId(null)} variant="secondary" className="mt-2">Done</Button>
-                  </div>
-                ) : (
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <div className="font-medium">{edu.degree} in {edu.field_of_study}</div>
-                      <div className="text-sm text-muted-foreground">{edu.institution}</div>
-                      <div className="text-xs text-muted-foreground">{formatMonthYear(edu.start_date)} - {formatMonthYear(edu.end_date)}</div>
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleEducationDragEnd}>
+              <SortableContext items={education.map((edu) => edu.id)} strategy={verticalListSortingStrategy}>
+                {education.map((edu, index) => (
+                  <SortableItem key={edu.id} id={edu.id}>
+                    <div className="p-4 border rounded-lg space-y-2 bg-muted/10">
+                      {editingEducationId === edu.id ? (
+                        <div>
+                        <div className="space-y-2">
+                          <Label>Institution *</Label>
+                          <Input
+                            value={edu.institution}
+                            onChange={(e) => updateEducation(edu.id, "institution", e.target.value)}
+                            placeholder="University/School name"
+                            disabled={isLoading}
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Degree *</Label>
+                          <Input
+                            value={edu.degree}
+                            onChange={(e) => updateEducation(edu.id, "degree", e.target.value)}
+                            placeholder="Bachelor's, Master's, etc."
+                            disabled={isLoading}
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Field of Study</Label>
+                          <Input
+                            value={edu.field_of_study}
+                            onChange={(e) => updateEducation(edu.id, "field_of_study", e.target.value)}
+                            placeholder="Computer Science, etc."
+                            disabled={isLoading}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Start Date</Label>
+                          <Input
+                            type="month"
+                            value={edu.start_date}
+                            onChange={(e) => updateEducation(edu.id, "start_date", e.target.value)}
+                            disabled={isLoading}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>End Date</Label>
+                          <Input
+                            type="month"
+                            value={edu.end_date}
+                            onChange={(e) => updateEducation(edu.id, "end_date", e.target.value)}
+                            disabled={isLoading}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>GPA (Optional)</Label>
+                          <Input
+                            value={edu.gpa || ""}
+                            onChange={(e) => updateEducation(edu.id, "gpa", e.target.value)}
+                            placeholder="3.8/4.0"
+                            disabled={isLoading}
+                          />
+                        </div>
+                      <div className="space-y-2">
+                        <Label>Description (Optional)</Label>
+                        <Textarea
+                          value={edu.description || ""}
+                          onChange={(e) => updateEducation(edu.id, "description", e.target.value)}
+                          placeholder="Relevant coursework, achievements, etc."
+                          rows={2}
+                          disabled={isLoading}
+                        />
+                      </div>
+                          <Button type="button" onClick={() => setEditingEducationId(null)} variant="secondary" className="mt-2">Done</Button>
+                        </div>
+                      ) : (
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <div className="font-medium">{edu.degree} in {edu.field_of_study}</div>
+                            <div className="text-sm text-muted-foreground">{edu.institution}</div>
+                            <div className="text-xs text-muted-foreground">{formatMonthYear(edu.start_date)} - {formatMonthYear(edu.end_date)}</div>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button type="button" size="sm" variant="outline" onClick={() => setEditingEducationId(edu.id)}>Edit</Button>
+                            <Button type="button" size="sm" variant="ghost" onClick={() => removeEducation(edu.id)} disabled={isLoading}><Trash2 className="h-4 w-4" /></Button>
+                          </div>
+                        </div>
+                      )}
                     </div>
-                    <div className="flex gap-2">
-                      <Button type="button" size="sm" variant="outline" onClick={() => setEditingEducationId(edu.id)}>Edit</Button>
-                      <Button type="button" size="sm" variant="ghost" onClick={() => removeEducation(edu.id)} disabled={isLoading}><Trash2 className="h-4 w-4" /></Button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ))}
+                  </SortableItem>
+                ))}
+              </SortableContext>
+            </DndContext>
             <Button type="button" onClick={addEducation} variant="outline" disabled={isLoading}>
               <Plus className="h-4 w-4 mr-2" />
               Add Education
@@ -416,112 +449,110 @@ export function UserProfileForm({ profile, onSuccess }: UserProfileFormProps) {
             <CardTitle className="flex items-center gap-2">
               <Briefcase className="h-5 w-5" />
               Professional Experience
-              <div className="ml-auto flex gap-2">
-                <Button type="button" size="icon" variant={experienceOrder === 'desc' ? 'default' : 'outline'} onClick={() => sortExperience('desc')} title="Latest to Oldest" disabled={isLoading}>
-                  <ArrowDownAZ className="h-4 w-4" />
-                </Button>
-                <Button type="button" size="icon" variant={experienceOrder === 'asc' ? 'default' : 'outline'} onClick={() => sortExperience('asc')} title="Oldest to Latest" disabled={isLoading}>
-                  <ArrowUpZA className="h-4 w-4" />
-                </Button>
-              </div>
             </CardTitle>
             <CardDescription>Your work history and experience</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {experience.length === 0 && <div className="text-muted-foreground">No experience added yet.</div>}
-            {experience.map((exp, index) => (
-              <div key={exp.id} className="p-4 border rounded-lg space-y-2 bg-muted/10">
-                {editingExperienceId === exp.id ? (
-                  <div>
-                  <div className="space-y-2">
-                    <Label>Company *</Label>
-                    <Input
-                      value={exp.company}
-                      onChange={(e) => updateExperience(exp.id, "company", e.target.value)}
-                      placeholder="Company name"
-                      disabled={isLoading}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Position *</Label>
-                    <Input
-                      value={exp.position}
-                      onChange={(e) => updateExperience(exp.id, "position", e.target.value)}
-                      placeholder="Job title"
-                      disabled={isLoading}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Location</Label>
-                    <Input
-                      value={exp.location || ""}
-                      onChange={(e) => updateExperience(exp.id, "location", e.target.value)}
-                      placeholder="City, State"
-                      disabled={isLoading}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Start Date</Label>
-                    <Input
-                      type="month"
-                      value={exp.start_date}
-                      onChange={(e) => updateExperience(exp.id, "start_date", e.target.value)}
-                      disabled={isLoading}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>End Date</Label>
-                    <Input
-                      type="month"
-                      value={exp.end_date}
-                      onChange={(e) => updateExperience(exp.id, "end_date", e.target.value)}
-                      disabled={exp.current || isLoading}
-                    />
-                  </div>
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    id={`current-${exp.id}`}
-                    checked={exp.current}
-                    onChange={(e) => {
-                      updateExperience(exp.id, "current", e.target.checked)
-                      if (e.target.checked) {
-                        updateExperience(exp.id, "end_date", "")
-                      }
-                    }}
-                    disabled={isLoading}
-                  />
-                  <Label htmlFor={`current-${exp.id}`}>I currently work here</Label>
-                </div>
-                <div className="space-y-2">
-                  <Label>Description *</Label>
-                  <Textarea
-                    value={exp.description}
-                    onChange={(e) => updateExperience(exp.id, "description", e.target.value)}
-                    placeholder="Describe your responsibilities and achievements..."
-                    rows={3}
-                    disabled={isLoading}
-                    required
-                  />
-                </div>
-                    <Button type="button" onClick={() => setEditingExperienceId(null)} variant="secondary" className="mt-2">Done</Button>
-                  </div>
-                ) : (
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <div className="font-medium">{exp.position} at {exp.company}</div>
-                      <div className="text-xs text-muted-foreground">{formatMonthYear(exp.start_date)} - {exp.current ? "Present" : formatMonthYear(exp.end_date)}</div>
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleExperienceDragEnd}>
+              <SortableContext items={experience.map((exp) => exp.id)} strategy={verticalListSortingStrategy}>
+                {experience.map((exp, index) => (
+                  <SortableItem key={exp.id} id={exp.id}>
+                    <div className="p-4 border rounded-lg space-y-2 bg-muted/10">
+                      {editingExperienceId === exp.id ? (
+                        <div>
+                        <div className="space-y-2">
+                          <Label>Company *</Label>
+                          <Input
+                            value={exp.company}
+                            onChange={(e) => updateExperience(exp.id, "company", e.target.value)}
+                            placeholder="Company name"
+                            disabled={isLoading}
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Position *</Label>
+                          <Input
+                            value={exp.position}
+                            onChange={(e) => updateExperience(exp.id, "position", e.target.value)}
+                            placeholder="Job title"
+                            disabled={isLoading}
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Location</Label>
+                          <Input
+                            value={exp.location || ""}
+                            onChange={(e) => updateExperience(exp.id, "location", e.target.value)}
+                            placeholder="City, State"
+                            disabled={isLoading}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Start Date</Label>
+                          <Input
+                            type="month"
+                            value={exp.start_date}
+                            onChange={(e) => updateExperience(exp.id, "start_date", e.target.value)}
+                            disabled={isLoading}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>End Date</Label>
+                          <Input
+                            type="month"
+                            value={exp.end_date}
+                            onChange={(e) => updateExperience(exp.id, "end_date", e.target.value)}
+                            disabled={exp.current || isLoading}
+                          />
+                        </div>
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id={`current-${exp.id}`}
+                          checked={exp.current}
+                          onChange={(e) => {
+                            updateExperience(exp.id, "current", e.target.checked)
+                            if (e.target.checked) {
+                              updateExperience(exp.id, "end_date", "")
+                            }
+                          }}
+                          disabled={isLoading}
+                        />
+                        <Label htmlFor={`current-${exp.id}`}>I currently work here</Label>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Description *</Label>
+                        <Textarea
+                          value={exp.description}
+                          onChange={(e) => updateExperience(exp.id, "description", e.target.value)}
+                          placeholder="Describe your responsibilities and achievements..."
+                          rows={3}
+                          disabled={isLoading}
+                          required
+                        />
+                      </div>
+                          <Button type="button" onClick={() => setEditingExperienceId(null)} variant="secondary" className="mt-2">Done</Button>
+                        </div>
+                      ) : (
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <div className="font-medium">{exp.position} at {exp.company}</div>
+                            <div className="text-xs text-muted-foreground">{formatMonthYear(exp.start_date)} - {exp.current ? "Present" : formatMonthYear(exp.end_date)}</div>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button type="button" size="sm" variant="outline" onClick={() => setEditingExperienceId(exp.id)}>Edit</Button>
+                            <Button type="button" size="sm" variant="ghost" onClick={() => removeExperience(exp.id)} disabled={isLoading}><Trash2 className="h-4 w-4" /></Button>
+                          </div>
+                        </div>
+                      )}
                     </div>
-                    <div className="flex gap-2">
-                      <Button type="button" size="sm" variant="outline" onClick={() => setEditingExperienceId(exp.id)}>Edit</Button>
-                      <Button type="button" size="sm" variant="ghost" onClick={() => removeExperience(exp.id)} disabled={isLoading}><Trash2 className="h-4 w-4" /></Button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ))}
+                  </SortableItem>
+                ))}
+              </SortableContext>
+            </DndContext>
             <Button type="button" onClick={addExperience} variant="outline" disabled={isLoading}>
               <Plus className="h-4 w-4 mr-2" />
               Add Experience
