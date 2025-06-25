@@ -16,8 +16,16 @@ export type GeneratedCoverLetter = {
   body: {
     hook: string
     skills: string
+    culture: string
     closing: string
   }
+  full_name: string
+  email: string
+  phone: string
+  website?: string
+  linkedin?: string
+  github?: string
+  applicationId?: string
   success: boolean
   error?: string
   toneUsed?: ToneType
@@ -318,17 +326,20 @@ ${jobDescription.substring(0, 1500)}
 
 INSTRUCTIONS:
 1. Write in ${finalTone} tone that matches the company culture
-2. Keep it concise (150-200 words total)
+2. Keep it concise (max 1 page, 3–5 paragraphs, 250–400 words)
 3. Connect the candidate's experience to specific job requirements
-4. ${companyMission ? `Reference the company mission: "${companyMission}"` : "Show genuine enthusiasm for the company"}
+4. Reference the company mission/vision: "${companyMission}"
 5. Address the recipient appropriately (${recipientInfo.name})
-6. End with a strong call-to-action
+6. Always include a culture fit/team alignment paragraph referencing the company's mission, values, or recent initiatives
+7. End with a strong, assertive call-to-action (not generic or desperate)
+8. Do NOT fabricate or invent any experience or skills
 
-SKILLS PARAGRAPH MUST INCLUDE:
-- One technical achievement with measurable results (numbers/percentages)
-- One team/leadership achievement showing impact
-- Direct mention of at least one technology/skill from the job description
-- Avoid generic statements without specifics
+STRUCTURE:
+- Header block: Name, Email | Phone | LinkedIn | City, State, Date, Hiring Manager, Company, Company Address
+- Opening: Strong hook (not "I'm writing to apply...")
+- Body: Map skills/achievements to job, reference quantifiable wins, mention tech stack if relevant
+- Culture fit: Show alignment with company mission/values, passion for their work
+- Closing: Assertive call to action ("Let's connect to discuss how I can drive impact at [Company].")
 
 CRITICAL: Return ONLY valid JSON in this exact format with no additional text:
 
@@ -344,7 +355,8 @@ CRITICAL: Return ONLY valid JSON in this exact format with no additional text:
   "body": {
     "hook": "Opening sentence connecting to company mission or role",
     "skills": "2-3 sentences highlighting relevant skills and achievements with metrics",
-    "closing": "Strong closing with call-to-action"
+    "culture": "Paragraph showing culture fit, passion for the company, or alignment with mission/values",
+    "closing": "Assertive closing with strong call-to-action"
   }
 }`
 
@@ -388,9 +400,10 @@ CRITICAL: Return ONLY valid JSON in this exact format with no additional text:
             },
             greeting: `Dear ${recipientInfo.name},`,
             body: {
-              hook: `I'm excited to apply for the ${jobTitle} position at ${companyName}, where I can contribute my technical expertise to your innovative team.`,
+              hook: `I'm excited to apply for the ${jobTitle} position at ${companyName}, where I can contribute my technical expertise to your innovative team and support your mission: ${companyMission}.`,
               skills: `With experience in ${skillsHighlights.split(", ").slice(0, 3).join(", ")}, I've successfully ${experienceHighlights.split(".")[0]}.`,
-              closing: `I'm eager to discuss how my background aligns with your team's goals and would welcome the opportunity to contribute to ${companyName}'s continued success.`,
+              culture: `I am inspired by your company's mission and values, and I am eager to join a team that is making a real impact in the industry.`,
+              closing: `Let's connect to discuss how I can drive impact at ${companyName}. Thank you for your consideration.`,
             },
           }
         }
@@ -409,6 +422,8 @@ ${coverLetterData.greeting}
 ${coverLetterData.body.hook}
 
 ${coverLetterData.body.skills}
+
+${coverLetterData.body.culture}
 
 ${coverLetterData.body.closing}
 
@@ -433,6 +448,13 @@ ${candidateName}
       recipient: coverLetterData.recipient,
       greeting: coverLetterData.greeting,
       body: coverLetterData.body,
+      full_name: candidateName,
+      email: resumeData.candidateInfo?.email || "",
+      phone: resumeData.candidateInfo?.phone || "",
+      website: resumeData.candidateInfo?.website,
+      linkedin: resumeData.candidateInfo?.linkedin,
+      github: resumeData.candidateInfo?.github,
+      applicationId: coverLetterData.applicationId,
       success: true,
       toneUsed: finalTone,
       qualityScore: qualityCheck.score,
@@ -460,7 +482,14 @@ ${candidateName}
       date: "",
       recipient: { name: "", company: "", location: "" },
       greeting: "",
-      body: { hook: "", skills: "", closing: "" },
+      body: { hook: "", skills: "", culture: "", closing: "" },
+      full_name: "",
+      email: "",
+      phone: "",
+      website: undefined,
+      linkedin: undefined,
+      github: undefined,
+      applicationId: undefined,
       success: false,
       error: errorMessage,
     }

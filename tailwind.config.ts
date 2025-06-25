@@ -97,6 +97,11 @@ const config: Config = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        brand: {
+          DEFAULT: '#22c55e', // Primary green
+          dark: '#16a34a',   // Darker green for hover/active
+          light: '#bbf7d0',  // Light green accent
+        },
       },
       borderRadius: {
         lg: "var(--radius)",

@@ -188,7 +188,7 @@ ${userProfile?.full_name || "Your Name"}`
       const result = await exportCoverLetterToPDF(coverLetterData)
 
       if (result.success) {
-        alert("Cover letter downloaded successfully!" + (result.url ? " Also saved to cloud storage." : ""))
+        // No popup needed after download
       } else {
         throw new Error(result.error)
       }
@@ -238,7 +238,7 @@ ${userProfile?.full_name || "Your Name"}`
       const result = await exportCoverLetterToDocx(coverLetterData)
 
       if (result.success) {
-        alert("Cover letter downloaded successfully!" + (result.url ? " Also saved to cloud storage." : ""))
+        // No popup needed after download
       } else {
         throw new Error(result.error)
       }

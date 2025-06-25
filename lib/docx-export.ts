@@ -1,7 +1,7 @@
 "use client"
 
-import * as PizZip from "pizzip"
-import * as Docxtemplater from "docxtemplater"
+import PizZip from "pizzip"
+import Docxtemplater from "docxtemplater"
 import * as fs from "fs"
 import * as path from "path"
 import saveAs from "file-saver"
@@ -10,6 +10,7 @@ import type { GeneratedResume } from "@/app/actions/generate-resume"
 import type { GeneratedCoverLetter } from "@/app/actions/generate-cover-letter"
 import { DraftManager } from "./draft-manager"
 import { storeResumeFile, storeCoverLetterFile } from "@/app/actions/store-resume-file"
+import { uploadResumeToBlob, uploadCoverLetterToBlob } from "@/lib/client-blob-storage"
 
 // Helper function to format phone number
 const formatPhoneNumber = (phone: string) => {
@@ -28,9 +29,6 @@ export async function exportResumeToPDF(resume: GeneratedResume): Promise<void> 
   try {
     // Dynamic import to avoid SSR issues
     const { jsPDF } = await import("jspdf")
-
-    // Import additional font for better text rendering
-    await import("@fontsource/roboto")
 
     // Create PDF document with letter size
     const doc = new jsPDF({
@@ -117,12 +115,12 @@ export async function exportResumeToPDF(resume: GeneratedResume): Promise<void> 
 
     // HEADER SECTION - Use the same data as preview
     // Get user data from resume object (which contains the mapped data)
-    const userName = resume.candidateName || "Candidate Name"
-    const userEmail = resume.candidateEmail || "email@example.com"
-    const userPhone = resume.candidatePhone || ""
-    const userWebsite = resume.candidateWebsite || ""
-    const userLinkedIn = resume.candidateLinkedIn || ""
-    const userGitHub = resume.candidateGitHub || ""
+    const userName = resume.full_name || "Candidate Name"
+    const userEmail = resume.email || "email@example.com"
+    const userPhone = resume.phone || ""
+    const userWebsite = resume.website || ""
+    const userLinkedIn = resume.linkedin || ""
+    const userGitHub = resume.github || ""
     const userLocation = resume.location || "Remote"
 
     // Name and title
@@ -142,10 +140,10 @@ export async function exportResumeToPDF(resume: GeneratedResume): Promise<void> 
     yPosition += 20
 
     // Links with proper hyperlinks - website on first line, social links on second line
-    if (resume.candidateWebsite) {
-      const websiteUrl = resume.candidateWebsite.startsWith("http")
-        ? resume.candidateWebsite
-        : `https://${resume.candidateWebsite}`
+    if (resume.website) {
+      const websiteUrl = resume.website.startsWith("http")
+        ? resume.website
+        : `https://${resume.website}`
 
       // Center the website link
       const websiteText = "makeitnow"
@@ -156,15 +154,15 @@ export async function exportResumeToPDF(resume: GeneratedResume): Promise<void> 
     }
 
     // Social links on second line
-    if (resume.candidateLinkedIn || resume.candidateGitHub) {
+    if (resume.linkedin || resume.github) {
       let socialLinksText = ""
       const socialLinks = []
 
-      if (resume.candidateLinkedIn) {
+      if (resume.linkedin) {
         socialLinks.push("LinkedIn")
         socialLinksText += "LinkedIn"
       }
-      if (resume.candidateGitHub) {
+      if (resume.github) {
         if (socialLinks.length > 0) socialLinksText += " | "
         socialLinks.push("GitHub")
         socialLinksText += "GitHub"
@@ -174,20 +172,20 @@ export async function exportResumeToPDF(resume: GeneratedResume): Promise<void> 
       const socialLinksWidth = doc.getTextWidth(socialLinksText)
       let linkX = (pageWidth - socialLinksWidth) / 2
 
-      if (resume.candidateLinkedIn) {
-        const linkedInWidth = addHyperlink("LinkedIn", resume.candidateLinkedIn, linkX, yPosition)
+      if (resume.linkedin) {
+        const linkedInWidth = addHyperlink("LinkedIn", resume.linkedin, linkX, yPosition)
         linkX += linkedInWidth
       }
-      if (resume.candidateLinkedIn && resume.candidateGitHub) {
+      if (resume.linkedin && resume.github) {
         doc.setTextColor(0, 0, 0) // Reset to black for separator
         doc.text(" | ", linkX, yPosition)
         linkX += doc.getTextWidth(" | ")
       }
-      if (resume.candidateGitHub) {
-        addHyperlink("GitHub", resume.candidateGitHub, linkX, yPosition)
+      if (resume.github) {
+        addHyperlink("GitHub", resume.github, linkX, yPosition)
       }
       yPosition += 35
-    } else if (resume.candidateWebsite) {
+    } else if (resume.website) {
       yPosition += 15
     }
 
@@ -231,7 +229,7 @@ export async function exportResumeToPDF(resume: GeneratedResume): Promise<void> 
     checkForNewPage(50)
     addSectionHeader("PROFESSIONAL EXPERIENCE")
 
-    resume.experience.forEach((exp) => {
+    resume.experience.forEach((exp: any) => {
       // Check if we need a new page for this experience
       checkForNewPage(exp.bullets.length * 20 + 40)
 
@@ -248,7 +246,7 @@ export async function exportResumeToPDF(resume: GeneratedResume): Promise<void> 
 
       // Bullets
       doc.setFontSize(11)
-      exp.bullets.forEach((bullet) => {
+      exp.bullets.forEach((bullet: string) => {
         // Process bullet text for proper spacing
         const processedBullet = addTextWithProperSpacing(bullet)
         const bulletLines = doc.splitTextToSize(`• ${processedBullet}`, contentWidth - 15)
@@ -270,7 +268,7 @@ export async function exportResumeToPDF(resume: GeneratedResume): Promise<void> 
     checkForNewPage(50)
     addSectionHeader("SELECTED PROJECTS")
 
-    resume.projects.forEach((project) => {
+    resume.projects.forEach((project: any) => {
       // Check if we need a new page for this project
       checkForNewPage(project.bullets.length * 20 + 40)
 
@@ -287,7 +285,7 @@ export async function exportResumeToPDF(resume: GeneratedResume): Promise<void> 
 
       // Bullets
       doc.setFontSize(11)
-      project.bullets.forEach((bullet) => {
+      project.bullets.forEach((bullet: string) => {
         // Process bullet text for proper spacing
         const processedBullet = addTextWithProperSpacing(bullet)
         const bulletLines = doc.splitTextToSize(`• ${processedBullet}`, contentWidth - 15)
@@ -309,8 +307,8 @@ export async function exportResumeToPDF(resume: GeneratedResume): Promise<void> 
     checkForNewPage(120)
     addSectionHeader("EDUCATION")
 
-    if (resume.candidateEducation && resume.candidateEducation.length > 0) {
-      resume.candidateEducation.forEach((edu) => {
+    if (resume.education && resume.education.length > 0) {
+      resume.education.forEach((edu: any) => {
         // Use the actual education data
         doc.setFontSize(12)
         doc.setFont("helvetica", "bold")
@@ -339,7 +337,7 @@ export async function exportResumeToPDF(resume: GeneratedResume): Promise<void> 
     }
 
     // Save the PDF locally
-    doc.save(`${resume.candidateName || "Resume"}.pdf`)
+    doc.save(`${resume.full_name || "Resume"}.pdf`)
 
     // Get the PDF as blob/buffer for storage
     const pdfBuffer = doc.output("arraybuffer")
@@ -347,11 +345,24 @@ export async function exportResumeToPDF(resume: GeneratedResume): Promise<void> 
     // Store the PDF in Supabase if we have an application ID
     if (resume.applicationId) {
       try {
-        const result = await storeResumeFile(resume.applicationId, "pdf", pdfBuffer)
-        if (result.success) {
-          console.log("Resume PDF stored successfully:", result.fileUrl)
+        // Upload the PDF buffer to get a URL
+        const uploadResult = await uploadResumeToBlob(
+          new Uint8Array(pdfBuffer),
+          `${resume.full_name || "Resume"}.pdf`,
+          resume.applicationId,
+          "pdf",
+          "application/pdf"
+        )
+        
+        if (uploadResult.success && uploadResult.url) {
+          const result = await storeResumeFile(resume.applicationId, "pdf", uploadResult.url)
+          if (result.success) {
+            console.log("Resume PDF stored successfully:", result.fileUrl)
+          } else {
+            console.error("Failed to store resume PDF:", result.error)
+          }
         } else {
-          console.error("Failed to store resume PDF:", result.error)
+          console.error("Failed to upload resume PDF:", uploadResult.error)
         }
       } catch (error) {
         console.error("Error storing resume PDF:", error)
@@ -438,42 +449,42 @@ export async function exportCoverLetterToPDF(coverLetter: GeneratedCoverLetter):
     // Name
     doc.setFontSize(14)
     doc.setFont("helvetica", "bold")
-    doc.text(coverLetter.candidateName || "Candidate Name", margin, yPosition)
+    doc.text(coverLetter.full_name || "Candidate Name", margin, yPosition)
     yPosition += 20
 
     // Contact info
     doc.setFontSize(10)
     doc.setFont("helvetica", "normal")
     doc.text(
-      `${coverLetter.location} • ${coverLetter.candidateEmail || "email@example.com"} • ${formatPhoneNumber(coverLetter.candidatePhone || "")}`,
+      `${coverLetter.location} • ${coverLetter.email || "email@example.com"} • ${formatPhoneNumber(coverLetter.phone || "")}`,
       margin,
       yPosition,
     )
     yPosition += 15
 
     // Links with proper hyperlinks - website on first line, social links on second line
-    if (coverLetter.candidateWebsite) {
-      const websiteUrl = coverLetter.candidateWebsite.startsWith("http")
-        ? coverLetter.candidateWebsite
-        : `https://${coverLetter.candidateWebsite}`
+    if (coverLetter.website) {
+      const websiteUrl = coverLetter.website.startsWith("http")
+        ? coverLetter.website
+        : `https://${coverLetter.website}`
       addHyperlink("makeitnow", websiteUrl, margin, yPosition)
       yPosition += 15
     }
 
     // Social links on second line
-    if (coverLetter.candidateLinkedIn || coverLetter.candidateGitHub) {
+    if (coverLetter.linkedin || coverLetter.github) {
       let linkX = margin
-      if (coverLetter.candidateLinkedIn) {
-        const linkedInWidth = addHyperlink("LinkedIn", coverLetter.candidateLinkedIn, linkX, yPosition)
+      if (coverLetter.linkedin) {
+        const linkedInWidth = addHyperlink("LinkedIn", coverLetter.linkedin, linkX, yPosition)
         linkX += linkedInWidth
       }
-      if (coverLetter.candidateLinkedIn && coverLetter.candidateGitHub) {
+      if (coverLetter.linkedin && coverLetter.github) {
         doc.setTextColor(0, 0, 0) // Reset to black for separator
         doc.text(" | ", linkX, yPosition)
         linkX += doc.getTextWidth(" | ")
       }
-      if (coverLetter.candidateGitHub) {
-        addHyperlink("GitHub", coverLetter.candidateGitHub, linkX, yPosition)
+      if (coverLetter.github) {
+        addHyperlink("GitHub", coverLetter.github, linkX, yPosition)
       }
       yPosition += 15
     }
@@ -522,10 +533,10 @@ export async function exportCoverLetterToPDF(coverLetter: GeneratedCoverLetter):
     yPosition += 25
 
     doc.setFont("helvetica", "bold")
-    doc.text(coverLetter.candidateName || "Candidate Name", margin, yPosition)
+    doc.text(coverLetter.full_name || "Candidate Name", margin, yPosition)
 
     // Save the PDF locally
-    doc.save(`${coverLetter.candidateName || "Cover_Letter"}.pdf`)
+    doc.save(`${coverLetter.full_name || "Cover_Letter"}.pdf`)
 
     // Get the PDF as blob/buffer for storage
     const pdfBuffer = doc.output("arraybuffer")
@@ -533,11 +544,24 @@ export async function exportCoverLetterToPDF(coverLetter: GeneratedCoverLetter):
     // Store the PDF in Supabase if we have an application ID
     if (coverLetter.applicationId) {
       try {
-        const result = await storeCoverLetterFile(coverLetter.applicationId, "pdf", pdfBuffer)
-        if (result.success) {
-          console.log("Cover letter PDF stored successfully:", result.fileUrl)
+        // Upload the PDF buffer to get a URL
+        const uploadResult = await uploadCoverLetterToBlob(
+          new Uint8Array(pdfBuffer),
+          `${coverLetter.full_name || "Cover_Letter"}.pdf`,
+          coverLetter.applicationId,
+          "pdf",
+          "application/pdf"
+        )
+        
+        if (uploadResult.success && uploadResult.url) {
+          const result = await storeCoverLetterFile(coverLetter.applicationId, "pdf", uploadResult.url)
+          if (result.success) {
+            console.log("Cover letter PDF stored successfully:", result.fileUrl)
+          } else {
+            console.error("Failed to store cover letter PDF:", result.error)
+          }
         } else {
-          console.error("Failed to store cover letter PDF:", result.error)
+          console.error("Failed to upload cover letter PDF:", uploadResult.error)
         }
       } catch (error) {
         console.error("Error storing cover letter PDF:", error)
@@ -567,7 +591,23 @@ export async function exportBothToPDF(resume: GeneratedResume, coverLetter: Gene
 
 // DOCX Export Functions (existing)
 export async function exportResumeToDocx(resume: GeneratedResume): Promise<void> {
-  const doc = new Document({
+  const safeName = (resume.full_name || "Candidate Name").replace(/[^a-zA-Z0-9]/g, "_");
+  const fileName = `${safeName}_Resume.docx`;
+  const docxDoc = new Document({
+    styles: {
+      default: {
+        document: {
+          run: {
+            font: "Calibri",
+            color: "000000",
+            size: 22, // 11pt default
+          },
+          paragraph: {
+            spacing: { after: 100 },
+          },
+        },
+      },
+    },
     sections: [
       {
         properties: {
@@ -585,63 +625,73 @@ export async function exportResumeToDocx(resume: GeneratedResume): Promise<void>
           new Paragraph({
             children: [
               new TextRun({
-                text: `${resume.candidateName || "Candidate Name"} - ${resume.jobTitle}`,
+                text: `${resume.full_name || "Candidate Name"} - ${resume.jobTitle}`,
                 bold: true,
                 size: 32, // 16pt
-                font: "Arial",
+                font: "Calibri",
+                color: "000000",
               }),
             ],
             alignment: AlignmentType.CENTER,
-            spacing: { after: 200, line: 276, lineRule: "auto" }, // 1.15 line spacing
+            spacing: { after: 200, line: 276, lineRule: "auto" },
           }),
           new Paragraph({
             children: [
               new TextRun({
                 text: `${resume.location} • `,
                 size: 20, // 10pt
-                font: "Arial",
+                font: "Calibri",
+                color: "000000",
               }),
               new ExternalHyperlink({
                 children: [
                   new TextRun({
-                    text: resume.candidateEmail || "email@example.com",
+                    text: resume.email || "email@example.com",
                     style: "Hyperlink",
                     size: 20,
-                    font: "Arial",
+                    font: "Calibri",
+                    color: "000000",
                   }),
                 ],
-                link: `mailto:${resume.candidateEmail || "email@example.com"}`,
+                link: `mailto:${resume.email || "email@example.com"}`,
               }),
               new TextRun({
                 text: " • ",
                 size: 20, // 10pt
-                font: "Arial",
+                font: "Calibri",
+                color: "000000",
               }),
               new TextRun({
-                text: `${formatPhoneNumber(resume.candidatePhone || "")} • `,
+                text: `${formatPhoneNumber(resume.phone || "")} • `,
                 size: 20, // 10pt
-                font: "Arial",
+                font: "Calibri",
+                color: "000000",
               }),
-              new ExternalHyperlink({
-                children: [
-                  new TextRun({
-                    text: "makeitnow",
-                    style: "Hyperlink",
-                    size: 20, // 10pt
-                    font: "Arial",
-                  }),
-                ],
-                link: resume.candidateWebsite?.startsWith("http")
-                  ? resume.candidateWebsite
-                  : `https://${resume.candidateWebsite || "website.com"}`,
-              }),
+              ...(resume.website
+                ? [
+                    new ExternalHyperlink({
+                      children: [
+                        new TextRun({
+                          text: "Website",
+                          style: "Hyperlink",
+                          size: 20, // 10pt
+                          font: "Calibri",
+                          color: "000000",
+                        }),
+                      ],
+                      link: resume.website.startsWith("http")
+                        ? resume.website
+                        : `https://${resume.website}`,
+                    }),
+                  ]
+                : []),
             ],
             alignment: AlignmentType.CENTER,
             spacing: { after: 100, line: 276, lineRule: "auto" },
           }),
           new Paragraph({
             children: [
-              ...(resume.candidateLinkedIn
+              ...(resume.linkedin
                 ? [
                     new ExternalHyperlink({
                       children: [
@@ -649,17 +699,18 @@ export async function exportResumeToDocx(resume: GeneratedResume): Promise<void>
                           text: "LinkedIn",
                           style: "Hyperlink",
                           size: 20, // 10pt
-                          font: "Arial",
+                          font: "Calibri",
+                          color: "000000",
                         }),
                       ],
-                      link: resume.candidateLinkedIn,
+                      link: resume.linkedin,
                     }),
                   ]
                 : []),
-              ...(resume.candidateLinkedIn && resume.candidateGitHub
-                ? [new TextRun({ text: " | ", size: 20, font: "Arial" })]
+              ...(resume.linkedin && resume.github
+                ? [new TextRun({ text: " | ", size: 20, font: "Calibri", color: "000000" })]
                 : []),
-              ...(resume.candidateGitHub
+              ...(resume.github
                 ? [
                     new ExternalHyperlink({
                       children: [
@@ -667,10 +718,11 @@ export async function exportResumeToDocx(resume: GeneratedResume): Promise<void>
                           text: "GitHub",
                           style: "Hyperlink",
                           size: 20, // 10pt
-                          font: "Arial",
+                          font: "Calibri",
+                          color: "000000",
                         }),
                       ],
-                      link: resume.candidateGitHub,
+                      link: resume.github,
                     }),
                   ]
                 : []),
@@ -686,7 +738,8 @@ export async function exportResumeToDocx(resume: GeneratedResume): Promise<void>
                 text: "PROFESSIONAL SUMMARY",
                 bold: true,
                 size: 28, // 14pt
-                font: "Arial",
+                font: "Calibri",
+                color: "000000",
               }),
             ],
             spacing: { after: 200, line: 276, lineRule: "auto" },
@@ -704,7 +757,8 @@ export async function exportResumeToDocx(resume: GeneratedResume): Promise<void>
               new TextRun({
                 text: resume.summary,
                 size: 22, // 11pt
-                font: "Arial",
+                font: "Calibri",
+                color: "000000",
               }),
             ],
             spacing: { after: 400, line: 276, lineRule: "auto" },
@@ -714,10 +768,11 @@ export async function exportResumeToDocx(resume: GeneratedResume): Promise<void>
           new Paragraph({
             children: [
               new TextRun({
-                text: "TECHNICAL SKILLS",
+                text: "SKILLS",
                 bold: true,
                 size: 28, // 14pt
-                font: "Arial",
+                font: "Calibri",
+                color: "000000",
               }),
             ],
             spacing: { after: 200, line: 276, lineRule: "auto" },
@@ -738,12 +793,14 @@ export async function exportResumeToDocx(resume: GeneratedResume): Promise<void>
                     text: `${category}: `,
                     bold: true,
                     size: 22, // 11pt
-                    font: "Arial",
+                    font: "Calibri",
+                    color: "000000",
                   }),
                   new TextRun({
                     text: skills.join(", "),
                     size: 22, // 11pt
-                    font: "Arial",
+                    font: "Calibri",
+                    color: "000000",
                   }),
                 ],
                 spacing: { after: 100, line: 276, lineRule: "auto" },
@@ -754,14 +811,15 @@ export async function exportResumeToDocx(resume: GeneratedResume): Promise<void>
             spacing: { after: 300 },
           }),
 
-          // Professional Experience
+          // Work Experience (ATS: use WORK EXPERIENCE)
           new Paragraph({
             children: [
               new TextRun({
-                text: "PROFESSIONAL EXPERIENCE",
+                text: "WORK EXPERIENCE",
                 bold: true,
                 size: 28, // 14pt
-                font: "Arial",
+                font: "Calibri",
+                color: "000000",
               }),
             ],
             spacing: { after: 200, line: 276, lineRule: "auto" },
@@ -774,31 +832,34 @@ export async function exportResumeToDocx(resume: GeneratedResume): Promise<void>
               },
             },
           }),
-          ...resume.experience.flatMap((exp) => [
+          ...resume.experience.flatMap((exp: any) => [
             new Paragraph({
               children: [
                 new TextRun({
                   text: exp.title,
                   bold: true,
                   size: 22, // 11pt
-                  font: "Arial",
+                  font: "Calibri",
+                  color: "000000",
                 }),
                 new TextRun({
                   text: `\t${exp.period}`,
                   size: 22, // 11pt
-                  font: "Arial",
+                  font: "Calibri",
+                  color: "000000",
                 }),
               ],
               spacing: { after: 100, line: 276, lineRule: "auto" },
             }),
             ...exp.bullets.map(
-              (bullet) =>
+              (bullet: string) =>
                 new Paragraph({
                   children: [
                     new TextRun({
-                      text: `• ${bullet}`,
+                      text: String.fromCharCode(8226) + " " + bullet, // Standard black circle bullet
                       size: 22, // 11pt
-                      font: "Arial",
+                      font: "Calibri",
+                      color: "000000",
                     }),
                   ],
                   indent: { left: 360 },
@@ -815,10 +876,11 @@ export async function exportResumeToDocx(resume: GeneratedResume): Promise<void>
           new Paragraph({
             children: [
               new TextRun({
-                text: "SELECTED PROJECTS",
+                text: "PROJECTS",
                 bold: true,
                 size: 28, // 14pt
-                font: "Arial",
+                font: "Calibri",
+                color: "000000",
               }),
             ],
             spacing: { after: 200, line: 276, lineRule: "auto" },
@@ -831,31 +893,34 @@ export async function exportResumeToDocx(resume: GeneratedResume): Promise<void>
               },
             },
           }),
-          ...resume.projects.flatMap((project) => [
+          ...(resume.projects || []).flatMap((project: any) => [
             new Paragraph({
               children: [
                 new TextRun({
                   text: project.title,
                   bold: true,
                   size: 22, // 11pt
-                  font: "Arial",
+                  font: "Calibri",
+                  color: "000000",
                 }),
                 new TextRun({
                   text: `\t${project.period}`,
                   size: 22, // 11pt
-                  font: "Arial",
+                  font: "Calibri",
+                  color: "000000",
                 }),
               ],
               spacing: { after: 100, line: 276, lineRule: "auto" },
             }),
             ...project.bullets.map(
-              (bullet) =>
+              (bullet: string) =>
                 new Paragraph({
                   children: [
                     new TextRun({
-                      text: `• ${bullet}`,
+                      text: String.fromCharCode(8226) + " " + bullet, // Standard black circle bullet
                       size: 22, // 11pt
-                      font: "Arial",
+                      font: "Calibri",
+                      color: "000000",
                     }),
                   ],
                   indent: { left: 360 },
@@ -875,7 +940,8 @@ export async function exportResumeToDocx(resume: GeneratedResume): Promise<void>
                 text: "EDUCATION",
                 bold: true,
                 size: 28, // 14pt
-                font: "Arial",
+                font: "Calibri",
+                color: "000000",
               }),
             ],
             spacing: { after: 200, line: 276, lineRule: "auto" },
@@ -888,1028 +954,240 @@ export async function exportResumeToDocx(resume: GeneratedResume): Promise<void>
               },
             },
           }),
-          ...(resume.candidateEducation && resume.candidateEducation.length > 0
-            ? resume.candidateEducation.flatMap((edu) => [
-                new Paragraph({
-                  children: [
-                    new TextRun({
-                      text: `${edu.degree} in ${edu.field_of_study} - ${edu.graduation_year}`,
-                      bold: true,
-                      size: 22, // 11pt
-                      font: "Arial",
-                    }),
-                  ],
-                  spacing: { after: 100, line: 276, lineRule: "auto" },
-                }),
-                new Paragraph({
-                  children: [
-                    new TextRun({
-                      text: `${edu.institution} - ${edu.location}`,
-                      size: 22, // 11pt
-                      font: "Arial",
-                    }),
-                  ],
-                  spacing: { after: 100, line: 276, lineRule: "auto" },
-                }),
-                ...(edu.gpa
-                  ? [
-                      new Paragraph({
-                        children: [
-                          new TextRun({
-                            text: `• GPA: ${edu.gpa}`,
-                            size: 22, // 11pt
-                            font: "Arial",
-                          }),
-                        ],
-                        indent: { left: 360 },
-                        spacing: { after: 100, line: 276, lineRule: "auto" },
-                      }),
-                    ]
-                  : []),
-                ...(edu.achievements
-                  ? [
-                      new Paragraph({
-                        children: [
-                          new TextRun({
-                            text: `• ${edu.achievements}`,
-                            size: 22, // 11pt
-                            font: "Arial",
-                          }),
-                        ],
-                        indent: { left: 360 },
-                        spacing: { after: 100, line: 276, lineRule: "auto" },
-                      }),
-                    ]
-                  : []),
-              ])
-            : [
-                // Fallback education
-                new Paragraph({
-                  children: [
-                    new TextRun({
-                      text: "Ontario College Diploma, Computer Programming - 2025",
-                      bold: true,
-                      size: 22, // 11pt
-                      font: "Arial",
-                    }),
-                  ],
-                  spacing: { after: 100, line: 276, lineRule: "auto" },
-                }),
-                new Paragraph({
-                  children: [
-                    new TextRun({
-                      text: "Conestoga College - Waterloo, ON",
-                      size: 22, // 11pt
-                      font: "Arial",
-                    }),
-                  ],
-                  spacing: { after: 100, line: 276, lineRule: "auto" },
-                }),
-                new Paragraph({
-                  children: [
-                    new TextRun({
-                      text: "• GPA: 3.92 (High Distinction)",
-                      size: 22, // 11pt
-                      font: "Arial",
-                    }),
-                  ],
-                  indent: { left: 360 },
-                  spacing: { after: 100, line: 276, lineRule: "auto" },
-                }),
-                new Paragraph({
-                  children: [
-                    new TextRun({
-                      text: "• Courses: Web Development, OOP, UI/UX Design, Data Structures",
-                      size: 22, // 11pt
-                      font: "Arial",
-                    }),
-                  ],
-                  indent: { left: 360 },
-                  spacing: { after: 100, line: 276, lineRule: "auto" },
-                }),
-                new Paragraph({
-                  children: [
-                    new TextRun({
-                      text: "• Awards: Best Final Year Project, Tech Showcase 2025, Best of Program, Capstone Project Award",
-                      size: 22, // 11pt
-                      font: "Arial",
-                    }),
-                  ],
-                  indent: { left: 360 },
-                  spacing: { after: 100, line: 276, lineRule: "auto" },
-                }),
-              ]),
-        ],
-      },
-    ],
-  })
-
-  const headerParagraphs = [
-    new Paragraph({
-      children: [
-        new TextRun({
-          text: `${resume.candidateName || "Candidate Name"} - ${resume.jobTitle}`,
-          bold: true,
-          size: 32, // 16pt
-          font: "Arial",
-        }),
-      ],
-      alignment: AlignmentType.CENTER,
-      spacing: { after: 200, line: 276, lineRule: "auto" }, // 1.15 line spacing
-    }),
-    new Paragraph({
-      children: [
-        new TextRun({
-          text: `${resume.location} • `,
-          size: 20, // 10pt
-          font: "Arial",
-        }),
-        new ExternalHyperlink({
-          children: [
-            new TextRun({
-              text: resume.candidateEmail || "email@example.com",
-              style: "Hyperlink",
-              size: 20,
-              font: "Arial",
-            }),
-          ],
-          link: `mailto:${resume.candidateEmail || "email@example.com"}`,
-        }),
-        new TextRun({
-          text: " • ",
-          size: 20, // 10pt
-          font: "Arial",
-        }),
-        new TextRun({
-          text: `${formatPhoneNumber(resume.candidatePhone || "")} • `,
-          size: 20, // 10pt
-          font: "Arial",
-        }),
-      ],
-      alignment: AlignmentType.CENTER,
-      spacing: { after: 100, line: 276, lineRule: "auto" },
-    }),
-  ]
-
-  // Links with proper hyperlinks - website on first line, social links on second line
-  if (resume.candidateWebsite) {
-    const websiteUrl = resume.candidateWebsite.startsWith("http")
-      ? resume.candidateWebsite
-      : `https://${resume.candidateWebsite}`
-
-    headerParagraphs.push(
-      new Paragraph({
-        children: [
-          new ExternalHyperlink({
-            children: [
-              new TextRun({
-                text: "makeitnow",
-                style: "Hyperlink",
-                size: 20,
-                font: "Arial",
-              }),
-            ],
-            link: websiteUrl,
-          }),
-        ],
-        alignment: AlignmentType.CENTER,
-        spacing: { after: 100, line: 276, lineRule: "auto" },
-      }),
-    )
-  }
-
-  // Social links on second line
-  const socialLinks = []
-  if (resume.candidateLinkedIn) {
-    socialLinks.push(
-      new ExternalHyperlink({
-        children: [
-          new TextRun({
-            text: "LinkedIn",
-            style: "Hyperlink",
-            size: 20,
-            font: "Arial",
-          }),
-        ],
-        link: resume.candidateLinkedIn,
-      }),
-    )
-  }
-  if (resume.candidateLinkedIn && resume.candidateGitHub) {
-    socialLinks.push(new TextRun({ text: " | ", size: 20, font: "Arial" }))
-  }
-  if (resume.candidateGitHub) {
-    socialLinks.push(
-      new ExternalHyperlink({
-        children: [
-          new TextRun({
-            text: "GitHub",
-            style: "Hyperlink",
-            size: 20,
-            font: "Arial",
-          }),
-        ],
-        link: resume.candidateGitHub,
-      }),
-    )
-  }
-
-  if (socialLinks.length > 0) {
-    headerParagraphs.push(
-      new Paragraph({
-        children: socialLinks,
-        alignment: AlignmentType.CENTER,
-        spacing: { after: 400, line: 276, lineRule: "auto" },
-      }),
-    )
-  }
-
-  const doc = new Document({
-    sections: [
-      {
-        properties: {
-          page: {
-            margin: {
-              top: 540, // 0.75 inches
-              right: 540, // 0.75 inches
-              bottom: 540, // 0.75 inches
-              left: 540, // 0.75 inches
-            },
-          },
-        },
-        children: [
-          ...headerParagraphs,
-
-          // Professional Summary
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: "PROFESSIONAL SUMMARY",
-                bold: true,
-                size: 28, // 14pt
-                font: "Arial",
-              }),
-            ],
-            spacing: { after: 200, line: 276, lineRule: "auto" },
-            border: {
-              bottom: {
-                color: "auto",
-                space: 1,
-                style: BorderStyle.SINGLE,
-                size: 6,
-              },
-            },
-          }),
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: resume.summary,
-                size: 22, // 11pt
-                font: "Arial",
-              }),
-            ],
-            spacing: { after: 400, line: 276, lineRule: "auto" },
-          }),
-
-          // Technical Skills
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: "TECHNICAL SKILLS",
-                bold: true,
-                size: 28, // 14pt
-                font: "Arial",
-              }),
-            ],
-            spacing: { after: 200, line: 276, lineRule: "auto" },
-            border: {
-              bottom: {
-                color: "auto",
-                space: 1,
-                style: BorderStyle.SINGLE,
-                size: 6,
-              },
-            },
-          }),
-          ...Object.entries(resume.skills).map(
-            ([category, skills]) =>
+          ...(resume.education || []).map(
+            (edu: any) =>
               new Paragraph({
                 children: [
                   new TextRun({
-                    text: `${category}: `,
+                    text: `${edu.degree} in ${edu.field_of_study}`,
                     bold: true,
                     size: 22, // 11pt
-                    font: "Arial",
+                    font: "Calibri",
+                    color: "000000",
                   }),
                   new TextRun({
-                    text: skills.join(", "),
+                    text: `\n${edu.institution} | ${edu.graduation_year}`,
                     size: 22, // 11pt
-                    font: "Arial",
+                    font: "Calibri",
+                    color: "000000",
                   }),
+                  ...(edu.gpa
+                    ? [
+                        new TextRun({
+                          text: `\nGPA: ${edu.gpa}`,
+                          size: 22, // 11pt
+                          font: "Calibri",
+                          color: "000000",
+                        }),
+                      ]
+                    : []),
                 ],
-                spacing: { after: 100, line: 276, lineRule: "auto" },
+                spacing: { after: 200, line: 276, lineRule: "auto" },
               }),
           ),
-          new Paragraph({
-            text: "",
-            spacing: { after: 300 },
-          }),
-
-          // Professional Experience
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: "PROFESSIONAL EXPERIENCE",
-                bold: true,
-                size: 28, // 14pt
-                font: "Arial",
-              }),
-            ],
-            spacing: { after: 200, line: 276, lineRule: "auto" },
-            border: {
-              bottom: {
-                color: "auto",
-                space: 1,
-                style: BorderStyle.SINGLE,
-                size: 6,
-              },
-            },
-          }),
-          ...resume.experience.flatMap((exp) => [
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: exp.title,
-                  bold: true,
-                  size: 22, // 11pt
-                  font: "Arial",
-                }),
-                new TextRun({
-                  text: `\t${exp.period}`,
-                  size: 22, // 11pt
-                  font: "Arial",
-                }),
-              ],
-              spacing: { after: 100, line: 276, lineRule: "auto" },
-            }),
-            ...exp.bullets.map(
-              (bullet) =>
-                new Paragraph({
-                  children: [
-                    new TextRun({
-                      text: `• ${bullet}`,
-                      size: 22, // 11pt
-                      font: "Arial",
-                    }),
-                  ],
-                  indent: { left: 360 },
-                  spacing: { after: 100, line: 276, lineRule: "auto" },
-                }),
-            ),
-            new Paragraph({
-              text: "",
-              spacing: { after: 200 },
-            }),
-          ]),
-
-          // Selected Projects
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: "SELECTED PROJECTS",
-                bold: true,
-                size: 28, // 14pt
-                font: "Arial",
-              }),
-            ],
-            spacing: { after: 200, line: 276, lineRule: "auto" },
-            border: {
-              bottom: {
-                color: "auto",
-                space: 1,
-                style: BorderStyle.SINGLE,
-                size: 6,
-              },
-            },
-          }),
-          ...resume.projects.flatMap((project) => [
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: project.title,
-                  bold: true,
-                  size: 22, // 11pt
-                  font: "Arial",
-                }),
-                new TextRun({
-                  text: `\t${project.period}`,
-                  size: 22, // 11pt
-                  font: "Arial",
-                }),
-              ],
-              spacing: { after: 100, line: 276, lineRule: "auto" },
-            }),
-            ...project.bullets.map(
-              (bullet) =>
-                new Paragraph({
-                  children: [
-                    new TextRun({
-                      text: `• ${bullet}`,
-                      size: 22, // 11pt
-                      font: "Arial",
-                    }),
-                  ],
-                  indent: { left: 360 },
-                  spacing: { after: 100, line: 276, lineRule: "auto" },
-                }),
-            ),
-            new Paragraph({
-              text: "",
-              spacing: { after: 200 },
-            }),
-          ]),
-
-          // Education
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: "EDUCATION",
-                bold: true,
-                size: 28, // 14pt
-                font: "Arial",
-              }),
-            ],
-            spacing: { after: 200, line: 276, lineRule: "auto" },
-            border: {
-              bottom: {
-                color: "auto",
-                space: 1,
-                style: BorderStyle.SINGLE,
-                size: 6,
-              },
-            },
-          }),
-          ...(resume.candidateEducation && resume.candidateEducation.length > 0
-            ? resume.candidateEducation.flatMap((edu) => [
-                new Paragraph({
-                  children: [
-                    new TextRun({
-                      text: `${edu.degree} in ${edu.field_of_study} - ${edu.graduation_year}`,
-                      bold: true,
-                      size: 22, // 11pt
-                      font: "Arial",
-                    }),
-                  ],
-                  spacing: { after: 100, line: 276, lineRule: "auto" },
-                }),
-                new Paragraph({
-                  children: [
-                    new TextRun({
-                      text: `${edu.institution} - ${edu.location}`,
-                      size: 22, // 11pt
-                      font: "Arial",
-                    }),
-                  ],
-                  spacing: { after: 100, line: 276, lineRule: "auto" },
-                }),
-                ...(edu.gpa
-                  ? [
-                      new Paragraph({
-                        children: [
-                          new TextRun({
-                            text: `• GPA: ${edu.gpa}`,
-                            size: 22, // 11pt
-                            font: "Arial",
-                          }),
-                        ],
-                        indent: { left: 360 },
-                        spacing: { after: 100, line: 276, lineRule: "auto" },
-                      }),
-                    ]
-                  : []),
-                ...(edu.achievements
-                  ? [
-                      new Paragraph({
-                        children: [
-                          new TextRun({
-                            text: `• ${edu.achievements}`,
-                            size: 22, // 11pt
-                            font: "Arial",
-                          }),
-                        ],
-                        indent: { left: 360 },
-                        spacing: { after: 100, line: 276, lineRule: "auto" },
-                      }),
-                    ]
-                  : []),
-              ])
-            : [
-                // Fallback education
-                new Paragraph({
-                  children: [
-                    new TextRun({
-                      text: "Ontario College Diploma, Computer Programming - 2025",
-                      bold: true,
-                      size: 22, // 11pt
-                      font: "Arial",
-                    }),
-                  ],
-                  spacing: { after: 100, line: 276, lineRule: "auto" },
-                }),
-                new Paragraph({
-                  children: [
-                    new TextRun({
-                      text: "Conestoga College - Waterloo, ON",
-                      size: 22, // 11pt
-                      font: "Arial",
-                    }),
-                  ],
-                  spacing: { after: 100, line: 276, lineRule: "auto" },
-                }),
-                new Paragraph({
-                  children: [
-                    new TextRun({
-                      text: "• GPA: 3.92 (High Distinction)",
-                      size: 22, // 11pt
-                      font: "Arial",
-                    }),
-                  ],
-                  indent: { left: 360 },
-                  spacing: { after: 100, line: 276, lineRule: "auto" },
-                }),
-                new Paragraph({
-                  children: [
-                    new TextRun({
-                      text: "• Courses: Web Development, OOP, UI/UX Design, Data Structures",
-                      size: 22, // 11pt
-                      font: "Arial",
-                    }),
-                  ],
-                  indent: { left: 360 },
-                  spacing: { after: 100, line: 276, lineRule: "auto" },
-                }),
-                new Paragraph({
-                  children: [
-                    new TextRun({
-                      text: "• Awards: Best Final Year Project, Tech Showcase 2025, Best of Program, Capstone Project Award",
-                      size: 22, // 11pt
-                      font: "Arial",
-                    }),
-                  ],
-                  indent: { left: 360 },
-                  spacing: { after: 100, line: 276, lineRule: "auto" },
-                }),
-              ]),
         ],
       },
     ],
   })
 
-  const blob = await Packer.toBlob(doc)
-  saveAs(blob, `${resume.candidateName || "Resume"}.docx`)
-
-  // Convert blob to ArrayBuffer for storage
-  const fileBuffer = await blob.arrayBuffer()
-
-  // Store the DOCX in Supabase if we have an application ID
-  if (resume.applicationId) {
-    try {
-      const result = await storeResumeFile(resume.applicationId, "docx", fileBuffer)
-      if (result.success) {
-        console.log("Resume DOCX stored successfully:", result.fileUrl)
-      } else {
-        console.error("Failed to store resume DOCX:", result.error)
-      }
-    } catch (error) {
-      console.error("Error storing resume DOCX:", error)
-    }
-  }
-
-  // Clear resume draft after successful export
-  DraftManager.clearResumeDraft()
+  const blob = await Packer.toBlob(docxDoc)
+  saveAs(blob, fileName)
 }
 
 export async function exportCoverLetterToDocx(coverLetter: GeneratedCoverLetter): Promise<void> {
-  const doc = new Document({
-    sections: [
-      {
-        properties: {
-          page: {
-            margin: {
-              top: 540, // 0.75 inches
-              right: 540, // 0.75 inches
-              bottom: 540, // 0.75 inches
-              left: 540, // 0.75 inches
-            },
-          },
-        },
-        children: [
-          // Header
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: coverLetter.candidateName || "Candidate Name",
-                bold: true,
-                size: 28, // 14pt
-                font: "Arial",
-              }),
-            ],
-            spacing: { after: 100, line: 276, lineRule: "auto" },
-          }),
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: `${coverLetter.location} • `,
-                size: 20, // 10pt
-                font: "Arial",
-              }),
-              new ExternalHyperlink({
-                children: [
-                  new TextRun({
-                    text: coverLetter.candidateEmail || "email@example.com",
-                    style: "Hyperlink",
-                    size: 20,
-                    font: "Arial",
-                  }),
-                ],
-                link: `mailto:${coverLetter.candidateEmail || "email@example.com"}`,
-              }),
-              new TextRun({
-                text: " • ",
-                size: 20, // 10pt
-                font: "Arial",
-              }),
-              new TextRun({
-                text: `${formatPhoneNumber(coverLetter.candidatePhone || "")} • `,
-                size: 20, // 10pt
-                font: "Arial",
-              }),
-            ],
-            spacing: { after: 100, line: 276, lineRule: "auto" },
-          }),
-          new Paragraph({
-            children: [
-              ...(coverLetter.candidateLinkedIn
-                ? [
-                    new ExternalHyperlink({
-                      children: [
-                        new TextRun({
-                          text: "LinkedIn",
-                          style: "Hyperlink",
-                          size: 20, // 10pt
-                          font: "Arial",
-                        }),
-                      ],
-                      link: coverLetter.candidateLinkedIn,
-                    }),
-                  ]
-                : []),
-              ...(coverLetter.candidateLinkedIn && coverLetter.candidateGitHub
-                ? [new TextRun({ text: " | ", size: 20, font: "Arial" })]
-                : []),
-              ...(coverLetter.candidateGitHub
-                ? [
-                    new ExternalHyperlink({
-                      children: [
-                        new TextRun({
-                          text: "GitHub",
-                          style: "Hyperlink",
-                          size: 20, // 10pt
-                          font: "Arial",
-                        }),
-                      ],
-                      link: coverLetter.candidateGitHub,
-                    }),
-                  ]
-                : []),
-            ],
-            spacing: { after: 100, line: 276, lineRule: "auto" },
-          }),
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: `Date: ${coverLetter.date}`,
-                size: 20, // 10pt
-                font: "Arial",
-              }),
-            ],
-            spacing: { after: 400, line: 276, lineRule: "auto" },
-          }),
-
-          // Recipient
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: coverLetter.recipient.name,
-                size: 22, // 11pt
-                font: "Arial",
-              }),
-            ],
-            spacing: { after: 100, line: 276, lineRule: "auto" },
-          }),
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: coverLetter.recipient.company,
-                size: 22, // 11pt
-                font: "Arial",
-              }),
-            ],
-            spacing: { after: 100, line: 276, lineRule: "auto" },
-          }),
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: coverLetter.recipient.location,
-                size: 22, // 11pt
-                font: "Arial",
-              }),
-            ],
-            spacing: { after: 400, line: 276, lineRule: "auto" },
-          }),
-
-          // Greeting
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: coverLetter.greeting,
-                size: 22, // 11pt
-                font: "Arial",
-              }),
-            ],
-            spacing: { after: 300, line: 276, lineRule: "auto" },
-          }),
-
-          // Body
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: coverLetter.body.hook,
-                size: 22, // 11pt
-                font: "Arial",
-              }),
-            ],
-            spacing: { after: 300, line: 276, lineRule: "auto" },
-          }),
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: coverLetter.body.skills,
-                size: 22, // 11pt
-                font: "Arial",
-              }),
-            ],
-            spacing: { after: 300, line: 276, lineRule: "auto" },
-          }),
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: coverLetter.body.closing,
-                size: 22, // 11pt
-                font: "Arial",
-              }),
-            ],
-            spacing: { after: 400, line: 276, lineRule: "auto" },
-          }),
-
-          // Closing
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: "Warm regards,",
-                size: 22, // 11pt
-                font: "Arial",
-              }),
-            ],
-            spacing: { after: 200, line: 276, lineRule: "auto" },
-          }),
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: coverLetter.candidateName || "Candidate Name",
-                bold: true,
-                size: 22, // 11pt
-                font: "Arial",
-              }),
-            ],
-          }),
-        ],
-      },
-    ],
-  })
-
   const sections = [
+    // Header block
     new Paragraph({
       children: [
         new TextRun({
-          text: coverLetter.candidateName || "Candidate Name",
+          text: coverLetter.full_name || "Candidate Name",
           bold: true,
-          size: 28, // 14pt
-          font: "Arial",
+          size: 22, // 11pt
+          font: "Calibri",
+          color: "000000",
         }),
       ],
       spacing: { after: 50 },
+      alignment: AlignmentType.LEFT,
     }),
     new Paragraph({
       children: [
         new TextRun({
-          text: `${coverLetter.location} • `,
-          size: 20, // 10pt
-          font: "Arial",
-        }),
-        new ExternalHyperlink({
-          children: [
-            new TextRun({
-              text: coverLetter.candidateEmail || "email@example.com",
-              style: "Hyperlink",
-              size: 20,
-              font: "Arial",
-            }),
-          ],
-          link: `mailto:${coverLetter.candidateEmail || "email@example.com"}`,
-        }),
-        new TextRun({
-          text: " • ",
-          size: 20, // 10pt
-          font: "Arial",
-        }),
-        new TextRun({
-          text: `${formatPhoneNumber(coverLetter.candidatePhone || "")} • `,
-          size: 20, // 10pt
-          font: "Arial",
+          text: `${coverLetter.email || "email@example.com"} | ${formatPhoneNumber(coverLetter.phone || "")} | ${coverLetter.linkedin || "LinkedIn"} | ${coverLetter.location}`,
+          size: 22, // 11pt
+          font: "Calibri",
+          color: "000000",
         }),
       ],
-      spacing: { after: 50 },
+      spacing: { after: 30 },
+      alignment: AlignmentType.LEFT,
     }),
     new Paragraph({
       children: [
         new TextRun({
-          text: `Date: ${coverLetter.date}`,
-          size: 20, // 10pt
-          font: "Arial",
+          text: coverLetter.date,
+          size: 22, // 11pt
+          font: "Calibri",
+          color: "000000",
         }),
       ],
-      spacing: { after: 100 },
+      spacing: { after: 30 },
+      alignment: AlignmentType.LEFT,
     }),
+    // Recipient block
     new Paragraph({
       children: [
         new TextRun({
           text: coverLetter.recipient.name,
           size: 22, // 11pt
-          font: "Arial",
+          font: "Calibri",
+          color: "000000",
         }),
       ],
-      spacing: { after: 50 },
+      spacing: { after: 10 },
+      alignment: AlignmentType.LEFT,
     }),
     new Paragraph({
       children: [
         new TextRun({
           text: coverLetter.recipient.company,
           size: 22, // 11pt
-          font: "Arial",
+          font: "Calibri",
+          color: "000000",
         }),
       ],
-      spacing: { after: 50 },
+      spacing: { after: 10 },
+      alignment: AlignmentType.LEFT,
     }),
     new Paragraph({
       children: [
         new TextRun({
           text: coverLetter.recipient.location,
           size: 22, // 11pt
-          font: "Arial",
+          font: "Calibri",
+          color: "000000",
         }),
       ],
-      spacing: { after: 100 },
+      spacing: { after: 30 },
+      alignment: AlignmentType.LEFT,
     }),
+    // Greeting
     new Paragraph({
       children: [
         new TextRun({
           text: coverLetter.greeting,
           size: 22, // 11pt
-          font: "Arial",
+          font: "Calibri",
+          color: "000000",
         }),
       ],
-      spacing: { after: 100 },
+      spacing: { after: 30 },
+      alignment: AlignmentType.LEFT,
     }),
+    // Hook
     new Paragraph({
       children: [
         new TextRun({
           text: coverLetter.body.hook,
           size: 22, // 11pt
-          font: "Arial",
+          font: "Calibri",
+          color: "000000",
         }),
       ],
-      spacing: { after: 100 },
+      spacing: { after: 30 },
+      alignment: AlignmentType.LEFT,
     }),
+    // Skills
     new Paragraph({
       children: [
         new TextRun({
           text: coverLetter.body.skills,
           size: 22, // 11pt
-          font: "Arial",
+          font: "Calibri",
+          color: "000000",
         }),
       ],
-      spacing: { after: 100 },
+      spacing: { after: 30 },
+      alignment: AlignmentType.LEFT,
     }),
+    // Culture fit
+    new Paragraph({
+      children: [
+        new TextRun({
+          text: coverLetter.body.culture,
+          size: 22, // 11pt
+          font: "Calibri",
+          color: "000000",
+        }),
+      ],
+      spacing: { after: 30 },
+      alignment: AlignmentType.LEFT,
+    }),
+    // Assertive closing
     new Paragraph({
       children: [
         new TextRun({
           text: coverLetter.body.closing,
           size: 22, // 11pt
-          font: "Arial",
+          font: "Calibri",
+          color: "000000",
         }),
       ],
-      spacing: { after: 100 },
+      spacing: { after: 30 },
+      alignment: AlignmentType.LEFT,
     }),
+    // Signature
     new Paragraph({
       children: [
         new TextRun({
-          text: "Warm regards,",
+          text: "Sincerely,",
           size: 22, // 11pt
-          font: "Arial",
+          font: "Calibri",
+          color: "000000",
         }),
       ],
-      spacing: { after: 50 },
+      spacing: { after: 10 },
+      alignment: AlignmentType.LEFT,
     }),
     new Paragraph({
       children: [
         new TextRun({
-          text: coverLetter.candidateName || "Candidate Name",
+          text: coverLetter.full_name || "Candidate Name",
           bold: true,
           size: 22, // 11pt
-          font: "Arial",
+          font: "Calibri",
+          color: "000000",
         }),
       ],
-      spacing: { after: 50 },
+      spacing: { after: 10 },
+      alignment: AlignmentType.LEFT,
     }),
   ]
 
-  // Links with proper hyperlinks - website on first line, social links on second line
-  if (coverLetter.candidateWebsite) {
-    const websiteUrl = coverLetter.candidateWebsite.startsWith("http")
-      ? coverLetter.candidateWebsite
-      : `https://${coverLetter.candidateWebsite}`
-
-    sections.push(
-      new Paragraph({
-        children: [
-          new ExternalHyperlink({
-            children: [new TextRun({ text: "makeitnow", style: "Hyperlink", size: 20, font: "Arial" })],
-            link: websiteUrl,
-          }),
-        ],
-        spacing: { after: 50 },
-      }),
-    )
-  }
-
-  // Social links on second line
-  const socialLinks = []
-  if (coverLetter.candidateLinkedIn) {
-    const linkedInUrl = coverLetter.candidateLinkedIn.startsWith("http")
-      ? coverLetter.candidateLinkedIn
-      : `https://${coverLetter.candidateLinkedIn}`
-    socialLinks.push(
-      new ExternalHyperlink({
-        children: [new TextRun({ text: "LinkedIn", style: "Hyperlink", size: 20, font: "Arial" })],
-        link: linkedInUrl,
-      }),
-    )
-  }
-  if (coverLetter.candidateLinkedIn && coverLetter.candidateGitHub) {
-    socialLinks.push(new TextRun({ text: " | ", size: 20, font: "Arial" }))
-  }
-  if (coverLetter.candidateGitHub) {
-    const githubUrl = coverLetter.candidateGitHub.startsWith("http")
-      ? coverLetter.candidateGitHub
-      : `https://${coverLetter.candidateGitHub}`
-    socialLinks.push(
-      new ExternalHyperlink({
-        children: [new TextRun({ text: "GitHub", style: "Hyperlink", size: 20, font: "Arial" })],
-        link: githubUrl,
-      }),
-    )
-  }
-
-  if (socialLinks.length > 0) {
-    sections.push(
-      new Paragraph({
-        children: socialLinks,
-        spacing: { after: 50 },
-      }),
-    )
-  }
-
-  const doc = new Document({
+  const docxDoc = new Document({
+    styles: {
+      default: {
+        document: {
+          run: {
+            font: "Calibri",
+            color: "000000",
+            size: 22, // 11pt default
+          },
+          paragraph: {
+            spacing: { after: 100 },
+          },
+        },
+      },
+    },
     sections: [
       {
         properties: {
           page: {
             margin: {
-              top: 540, // 0.75 inches
-              right: 540, // 0.75 inches
-              bottom: 540, // 0.75 inches
-              left: 540, // 0.75 inches
+              top: 1440, // 1 inch
+              right: 1440, // 1 inch
+              bottom: 1440, // 1 inch
+              left: 1440, // 1 inch
             },
           },
         },
@@ -1918,28 +1196,8 @@ export async function exportCoverLetterToDocx(coverLetter: GeneratedCoverLetter)
     ],
   })
 
-  const blob = await Packer.toBlob(doc)
-  saveAs(blob, `${coverLetter.candidateName || "Cover_Letter"}.docx`)
-
-  // Convert blob to ArrayBuffer for storage
-  const fileBuffer = await blob.arrayBuffer()
-
-  // Store the DOCX in Supabase if we have an application ID
-  if (coverLetter.applicationId) {
-    try {
-      const result = await storeCoverLetterFile(coverLetter.applicationId, "docx", fileBuffer)
-      if (result.success) {
-        console.log("Cover letter DOCX stored successfully:", result.fileUrl)
-      } else {
-        console.error("Failed to store cover letter DOCX:", result.error)
-      }
-    } catch (error) {
-      console.error("Error storing cover letter DOCX:", error)
-    }
-  }
-
-  // Clear cover letter draft after successful export
-  DraftManager.clearCoverLetterDraft()
+  const blob = await Packer.toBlob(docxDoc)
+  saveAs(blob, `${coverLetter.full_name || "Cover_Letter"}.docx`)
 }
 
 export async function exportBothToDocx(resume: GeneratedResume, coverLetter: GeneratedCoverLetter): Promise<void> {
@@ -1992,12 +1250,12 @@ export function generateDocx(resumeContent: string, userProfile: any) {
       style: "contact",
     },
     // Dynamic education section
-    education: (userProfile?.education || []).map((edu) => ({
+    education: (userProfile?.education || []).map((edu: any) => ({
       text: `${edu.degree} in ${edu.field_of_study}`,
       style: "educationItem",
     })),
     // Dynamic experience section
-    experience: (userProfile?.professional_experience || []).map((exp) => ({
+    experience: (userProfile?.professional_experience || []).map((exp: any) => ({
       text: `${exp.job_title} at ${exp.company}`,
       style: "experienceItem",
     })),

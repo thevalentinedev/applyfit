@@ -62,6 +62,12 @@ export interface GeneratedResume {
   jobTitle: string
   location: string
   summary: string
+  full_name: string
+  email: string
+  phone: string
+  website?: string
+  linkedin?: string
+  github?: string
   skills: { [category: string]: string[] }
   experience: Array<{
     title: string
@@ -72,6 +78,15 @@ export interface GeneratedResume {
     title: string
     period: string
     bullets: string[]
+  }>
+  education?: Array<{
+    degree: string
+    field_of_study: string
+    institution: string
+    graduation_year: string
+    gpa?: string
+    achievements?: string
+    location?: string
   }>
   applicationId?: string
   error?: string
@@ -139,6 +154,9 @@ export async function generateResume(
         jobTitle,
         location: "Remote",
         summary: "",
+        full_name: "",
+        email: "",
+        phone: "",
         skills: {},
         experience: [],
         projects: [],
@@ -154,6 +172,9 @@ export async function generateResume(
         jobTitle,
         location: "Remote",
         summary: "",
+        full_name: "",
+        email: "",
+        phone: "",
         skills: {},
         experience: [],
         projects: [],
@@ -176,37 +197,68 @@ export async function generateResume(
 
     // Process education data
     const educationData =
-      userProfile.education?.map((edu) => ({
+      userProfile.education?.map((edu: {
+        degree: string
+        field_of_study: string
+        institution: string
+        graduation_year: string
+        gpa?: string
+        achievements?: string
+        end_date?: string
+        description?: string
+        location?: string
+      }) => ({
         institution: edu.institution || "Institution",
         degree: edu.degree || "Degree",
-        field_of_study: edu.field_of_study || "",
-        graduation_year: edu.graduation_year || edu.end_date || "Year",
-        gpa: edu.gpa || "",
-        achievements: edu.achievements || edu.description || "",
-        location: edu.location || "",
+        field_of_study: edu.field_of_study || "Field of Study",
+        graduation_year: edu.graduation_year || "Year",
+        gpa: edu.gpa,
+        achievements: edu.achievements,
+        end_date: edu.end_date,
+        description: edu.description,
+        location: edu.location,
       })) || []
 
     // Process experience data
     const experienceData =
-      userProfile.professional_experience?.map((exp) => ({
+      userProfile.professional_experience?.map((exp: {
+        position: string
+        company: string
+        start_date: string
+        end_date: string
+        description: string
+        current?: boolean
+        is_current?: boolean
+        location?: string
+      }) => ({
         company: exp.company || "Company",
         position: exp.position || "Position",
-        start_date: exp.start_date || "",
-        end_date: exp.end_date || (exp.current || exp.is_current ? "Present" : ""),
+        start_date: exp.start_date || "Start Date",
+        end_date: exp.end_date || "End Date",
         description: exp.description || "",
-        location: exp.location || "",
+        current: exp.current,
+        is_current: exp.is_current,
+        location: exp.location,
       })) || []
 
     // Process projects data
     const projectsData =
-      userProfile.projects_achievements?.map((proj) => ({
+      userProfile.projects_achievements?.map((proj: {
+        title: string
+        description: string
+        technologies: string[]
+        start_date?: string
+        end_date?: string
+        is_ongoing?: boolean
+        url?: string
+      }) => ({
         title: proj.title || "Project",
         description: proj.description || "",
         technologies: proj.technologies || [],
-        start_date: proj.start_date || "",
-        end_date: proj.end_date || (proj.is_ongoing ? "Present" : ""),
-        url: proj.url || proj.demo_url || "",
-        github_url: proj.github_url || "",
+        start_date: proj.start_date,
+        end_date: proj.end_date,
+        is_ongoing: proj.is_ongoing,
+        url: proj.url,
       })) || []
 
     const model = useGpt4 ? openai("gpt-4o") : openai("gpt-3.5-turbo")
@@ -230,23 +282,45 @@ LinkedIn: ${userLinkedIn}
 GitHub: ${userGitHub}
 Location: ${userLocation}
 
+IMPORTANT:
+- Only use the education, experience, and projects provided in the USER PROFILE DATA section below.
+- Do NOT fabricate or invent any additional experience, projects, or education.
+- If a section is empty, leave it empty or omit it from the resume.
+
 EDUCATION:
 ${educationData
   .map(
-    (edu) =>
+    (edu: {
+      degree: string
+      field_of_study: string
+      institution: string
+      graduation_year: string
+      gpa?: string
+      achievements?: string
+    }) =>
       `- ${edu.degree} in ${edu.field_of_study} from ${edu.institution} (${edu.graduation_year})${edu.gpa ? `, GPA: ${edu.gpa}` : ""}${edu.achievements ? `, ${edu.achievements}` : ""}`,
   )
   .join("\n")}
 
 PROFESSIONAL EXPERIENCE:
 ${experienceData
-  .map((exp) => `- ${exp.position} at ${exp.company} (${exp.start_date} - ${exp.end_date}): ${exp.description}`)
+  .map((exp: {
+    position: string
+    company: string
+    start_date: string
+    end_date: string
+    description: string
+  }) => `- ${exp.position} at ${exp.company} (${exp.start_date} - ${exp.end_date}): ${exp.description}`)
   .join("\n")}
 
 PROJECTS:
 ${projectsData
   .map(
-    (proj) =>
+    (proj: {
+      title: string
+      description: string
+      technologies: string[]
+    }) =>
       `- ${proj.title}: ${proj.description}${proj.technologies.length ? ` (Technologies: ${proj.technologies.join(", ")})` : ""}`,
   )
   .join("\n")}
@@ -350,6 +424,13 @@ Return ONLY a valid JSON object with this exact structure (no markdown, no code 
         success: true,
         jobTitle,
         location: userLocation, // Use actual user location
+        full_name: userName,
+        email: userEmail,
+        phone: userPhone,
+        website: userWebsite,
+        linkedin: userLinkedIn,
+        github: userGitHub,
+        education: educationData,
         applicationId, // CRITICAL: Include the application ID
       }
 
@@ -385,6 +466,9 @@ Return ONLY a valid JSON object with this exact structure (no markdown, no code 
         jobTitle,
         location: userLocation,
         summary: "",
+        full_name: "",
+        email: "",
+        phone: "",
         skills: {},
         experience: [],
         projects: [],
@@ -398,6 +482,9 @@ Return ONLY a valid JSON object with this exact structure (no markdown, no code 
       jobTitle,
       location: "Remote",
       summary: "",
+      full_name: "",
+      email: "",
+      phone: "",
       skills: {},
       experience: [],
       projects: [],
