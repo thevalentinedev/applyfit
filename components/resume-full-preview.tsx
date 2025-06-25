@@ -115,8 +115,21 @@ export function ResumeFullPreview({
   const userLocation = safeGetUserData(userProfile, "location", resume.location || "Your Location")
 
   // Safely extract arrays
-  const educationArray = safeGetArray(userProfile?.education)
-  const experienceArray = safeGetArray(userProfile?.professional_experience)
+  let educationArray = safeGetArray(userProfile?.education)
+  let experienceArray = safeGetArray(userProfile?.professional_experience)
+
+  // Sort experience latest to oldest
+  experienceArray = experienceArray.slice().sort((a, b) => {
+    const aDate = new Date(a.end_date || a.start_date || 0).getTime()
+    const bDate = new Date(b.end_date || b.start_date || 0).getTime()
+    return bDate - aDate
+  })
+  // Sort education latest to oldest
+  educationArray = educationArray.slice().sort((a, b) => {
+    const aDate = new Date(a.graduation_year || a.end_date || a.start_date || 0).getTime()
+    const bDate = new Date(b.graduation_year || b.end_date || b.start_date || 0).getTime()
+    return bDate - aDate
+  })
 
   // Check for stored files
   const checkStoredFiles = async () => {

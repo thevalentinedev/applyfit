@@ -274,29 +274,32 @@ export async function exportResumeToDocx(
         heading: HeadingLevel.HEADING_2,
         spacing: { before: 200, after: 100 },
       }),
-    )
+    );
 
-    resume.experience?.forEach((exp) => {
+    (resume.experience || []).slice().sort((a: any, b: any) => {
+      const aDate = new Date(a.end_date || a.start_date || 0).getTime();
+      const bDate = new Date(b.end_date || b.start_date || 0).getTime();
+      return bDate - aDate;
+    }).forEach((exp: any) => {
       sections.push(
         new Paragraph({
           children: [
             new TextRun({ text: exp.title, bold: true, size: 22 }),
-            new TextRun({ text: ` - ${exp.period}`, size: 22 }),
+            ...(typeof exp.period === 'string' && exp.period.trim() ? [new TextRun({ text: ` - ${exp.period}`, size: 22 })] : []),
           ],
           spacing: { after: 100 },
         }),
-      )
-
-      exp.bullets?.forEach((bullet) => {
+      );
+      exp.bullets?.forEach((bullet: any) => {
         sections.push(
           new Paragraph({
             children: [new TextRun({ text: `• ${bullet}`, size: 22 })],
             indent: { left: 360 },
             spacing: { after: 50 },
           }),
-        )
-      })
-    })
+        );
+      });
+    });
 
     // Projects
     if (resume.projects && resume.projects.length > 0) {
@@ -317,7 +320,7 @@ export async function exportResumeToDocx(
             spacing: { after: 100 },
           }),
         )
-        project.bullets?.forEach((bullet) => {
+        project.bullets?.forEach((bullet: any) => {
           sections.push(
             new Paragraph({
               children: [new TextRun({ text: `• ${bullet}`, size: 22 })],
@@ -339,7 +342,11 @@ export async function exportResumeToDocx(
         }),
       )
 
-      resume.candidateEducation.forEach((edu) => {
+      resume.candidateEducation.slice().sort((a: any, b: any) => {
+        const aDate = new Date(a.graduation_year || a.end_date || a.start_date || 0).getTime();
+        const bDate = new Date(b.graduation_year || b.end_date || b.start_date || 0).getTime();
+        return bDate - aDate;
+      }).forEach((edu: any) => {
         const degreeText = `${edu.degree || "Degree"}${edu.field_of_study ? ` in ${edu.field_of_study}` : ""}`
         const institutionText = `${edu.institution || "Institution"}${edu.location ? ` - ${edu.location}` : ""}`
         sections.push(
@@ -535,10 +542,14 @@ export async function exportResumeToPDF(
 
     // Professional Experience
     addText("PROFESSIONAL EXPERIENCE", 14, true)
-    addSpacing(5)
-    resume.experience?.forEach((exp) => {
+    addSpacing(5);
+    (resume.experience || []).slice().sort((a: any, b: any) => {
+      const aDate = new Date(a.end_date || a.start_date || 0).getTime();
+      const bDate = new Date(b.end_date || b.start_date || 0).getTime();
+      return bDate - aDate;
+    }).forEach((exp: any) => {
       addText(`${exp.title} - ${exp.period}`, 11, true)
-      exp.bullets?.forEach((bullet) => {
+      exp.bullets?.forEach((bullet: any) => {
         addText(`• ${bullet}`, 11)
       })
       addSpacing(10)
@@ -550,7 +561,7 @@ export async function exportResumeToPDF(
       addSpacing(5)
       resume.projects.forEach((project) => {
         addText(`${project.title}`, 11, true)
-        project.bullets?.forEach((bullet) => {
+        project.bullets?.forEach((bullet: any) => {
           addText(`• ${bullet}`, 11)
         })
         addSpacing(10)
@@ -561,11 +572,21 @@ export async function exportResumeToPDF(
     if (resume.candidateEducation && resume.candidateEducation.length > 0) {
       addText("EDUCATION", 14, true)
       addSpacing(5)
-      resume.candidateEducation.forEach((edu) => {
+      resume.candidateEducation.slice().sort((a: any, b: any) => {
+        const aDate = new Date(a.graduation_year || a.end_date || a.start_date || 0).getTime();
+        const bDate = new Date(b.graduation_year || b.end_date || b.start_date || 0).getTime();
+        return bDate - aDate;
+      }).forEach((edu: any) => {
         const degreeText = `${edu.degree || "Degree"}${edu.field_of_study ? ` in ${edu.field_of_study}` : ""}`
         const institutionText = `${edu.institution || "Institution"}${edu.location ? ` - ${edu.location}` : ""}`
         addText(degreeText, 11, true)
         addText(institutionText, 11)
+        if (edu.gpa) {
+          addText(`GPA: ${edu.gpa}`, 11)
+        }
+        if (edu.achievements) {
+          addText(edu.achievements, 11)
+        }
         addSpacing(10)
       })
     }
